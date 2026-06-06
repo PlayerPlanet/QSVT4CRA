@@ -233,7 +233,12 @@ def main() -> None:
         if str(args.posterior_checkpoint).endswith(".pt"):
             import torch
             ckpt = torch.load(args.posterior_checkpoint, map_location="cpu", weights_only=False)
-            posterior_samples = ckpt.get("posterior_samples") or ckpt.get("samples") or ckpt.get("theta")
+            posterior_samples = (
+                ckpt.get("posterior_samples")
+                or ckpt.get("samples")
+                or ckpt.get("theta")
+                or ckpt.get("posterior")
+            )
         else:
             data = np.load(args.posterior_checkpoint)
             if "theta_samples" in data:
