@@ -495,6 +495,7 @@ def run_boston_qpu(
     apply_mitigation: bool,
     cal_shots: int,
     token_file: str | None,
+    use_pyzx: bool,
 ) -> dict:
     t0 = time.time()
     circuit, meta = build_finnish_mortgage_qsvt_circuit(
@@ -519,6 +520,7 @@ def run_boston_qpu(
         calibration_aware_layout=True,
         api_key_env=api_key_env,
         channel=channel,
+        use_pyzx=use_pyzx,
     )
     compiled, report = compile_for_backend(measured, backend, config=config)
 
@@ -636,6 +638,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--optimization-level", type=int, default=3)
     parser.add_argument("--seed-transpiler", type=int, default=42)
     parser.add_argument(
+        "--use-pyzx",
+        action="store_true",
+        help=(
+            "Run an extra pyzx.basic_optimization pass on the routed circuit. "
+            "Helps on small/medium circuits but adds routing overhead on the "
+            "K=17 QSVT (depth increases on Heron's heavy-hex).  Default: off."
+        ),
+    )
+    parser.add_argument(
         "--no-mitigation",
         action="store_true",
         help="Skip the per-qubit readout calibration and mitigation round.",
@@ -673,6 +684,7 @@ def main(argv: list[str] | None = None) -> int:
         apply_mitigation=not args.no_mitigation,
         cal_shots=args.cal_shots,
         token_file=token_file,
+        use_pyzx=args.use_pyzx,
     )
 
     summary = {
