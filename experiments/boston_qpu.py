@@ -234,14 +234,32 @@ def classical_reference(
 # ---------------------------------------------------------------------------
 
 
-def _extract_bit_counts(bit_array, bit_index: int) -> dict[str, int]:
+def _extract_bit_counts(bit_array_or_data, bit_index: int = 0) -> dict[str, int]:
     """Pull the marginal bitstring counts for ``bit_index`` from a
-    ``qiskit.primitives.containers.BitArray``.
+    SamplerV2 primitive result.
 
-    The classical register in our compiled circuit contains a single bit
-    (cbit 0) for the measured qubit, so ``bit_index`` should normally be
-    0.  We slice defensively for multi-bit registers.
+    Accepts either a ``qiskit.primitives.containers.BitArray`` (when
+    called on the inner result of a pre-1.0 / legacy path) or a
+    ``DataBin`` (the SamplerV2 primitive result in qiskit 2.x).  The
+    DataBin exposes ``creg_names`` and per-register attributes; we
+    pick the first BitArray we find.
+
+    For multi-bit registers we slice to ``bit_index`` (default 0 = the
+    single measured bit in our calibration circuits).
     """
+
+    # Resolve a BitArray from whatever the caller handed us
+    bit_array = bit_array_or_data
+    if not hasattr(bit_array, "get_int_counts"):
+        # Likely a DataBin
+        creg_names = list(getattr(bit_array, "creg_names", []) or [])
+        if creg_names:
+            bit_array = getattr(bit_array, creg_names[-1])
+        else:
+            data = getattr(bit_array, "_data", None) or {}
+            if not data:
+                return {"0": 0, "1": 0}
+            bit_array = next(iter(data.values()))
 
     try:
         if getattr(bit_array, "num_bits", 1) > 1 and hasattr(bit_array, "slice_bits"):
