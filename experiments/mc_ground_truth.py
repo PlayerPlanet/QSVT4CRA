@@ -97,7 +97,7 @@ def _load_posterior(path: str) -> np.ndarray:
         try:
             import torch
 
-            ckpt = torch.load(path, map_location="cpu")
+            ckpt = torch.load(path, map_location="cpu", weights_only=False)
             if isinstance(ckpt, dict):
                 for key in ("posterior", "samples", "theta"):
                     if key in ckpt:
