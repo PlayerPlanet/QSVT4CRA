@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 from dataclasses import asdict, dataclass
 from math import prod
+from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
 from qiskit import QuantumCircuit, transpile
@@ -18,6 +19,9 @@ from qiskit.circuit import ClassicalRegister
 
 TWO_QUBIT_OPS = ("ecr", "cx", "cz", "iswap", "rxx", "ryy", "rzz")
 HERON_PREFERRED_OPS = ("ecr", "cz", "cx")
+
+DEFAULT_TOKEN_FILE = ".ibm_token"
+TOKEN_FILE_ENV = "IBM_API_KEY_FILE"
 
 
 @dataclass(frozen=True)
@@ -50,19 +54,59 @@ class CompileReport:
         return asdict(self)
 
 
-def load_ibm_service(api_key_env: str = "IBM_API_KEY", channel: str | None = None):
-    """Create a Qiskit Runtime service from an environment variable.
+def load_ibm_token(
+    api_key_env: str = "IBM_API_KEY",
+    token_file: str | os.PathLike[str] | None = DEFAULT_TOKEN_FILE,
+) -> str:
+    """Resolve the IBM Quantum token from environment or local file.
+
+    Resolution order:
+
+    1. ``$api_key_env`` (default ``IBM_API_KEY``) — preferred, matches the
+       existing convention in ``slurm_heron_simulation.sh`` and the docs.
+    2. ``$IBM_API_KEY_FILE`` — path to a file whose first non-empty line is
+       the token (override).
+    3. ``token_file`` path (default ``.ibm_token`` in the current working
+       directory) — convenient fallback for users who prefer not to export.
+
+    The token is returned verbatim and never logged.  Set ``token_file=None``
+    to disable the file fallback entirely.
+    """
+
+    token = os.environ.get(api_key_env)
+    if token:
+        return token.strip()
+
+    file_path = os.environ.get(TOKEN_FILE_ENV) or token_file
+    if file_path:
+        path = Path(file_path).expanduser()
+        if path.is_file():
+            for line in path.read_text(encoding="utf-8").splitlines():
+                stripped = line.strip()
+                if stripped and not stripped.startswith("#"):
+                    return stripped
+
+    raise RuntimeError(
+        "Missing IBM Quantum token. Set $" + api_key_env + " (preferred), or "
+        "$" + TOKEN_FILE_ENV + " pointing at a token file, or create a "
+        f"'{DEFAULT_TOKEN_FILE}' file in the working directory containing the "
+        "token on its first non-comment line. See compiler_backend.heron.load_ibm_token."
+    )
+
+
+def load_ibm_service(
+    api_key_env: str = "IBM_API_KEY",
+    channel: str | None = None,
+    token_file: str | os.PathLike[str] | None = DEFAULT_TOKEN_FILE,
+):
+    """Create a Qiskit Runtime service from token (env var or local file).
 
     The token is never printed or returned.  We try both current and older IBM
     channel names because the project has been used across Qiskit Runtime
     versions.
     """
 
-    token = os.environ.get(api_key_env)
-    if not token:
-        raise RuntimeError(
-            f"Missing IBM Quantum token: set ${api_key_env} before fetching backend calibration data."
-        )
+    token = load_ibm_token(api_key_env=api_key_env, token_file=token_file)
 
     try:
         from qiskit_ibm_runtime import QiskitRuntimeService
@@ -72,31 +116,48 @@ def load_ibm_service(api_key_env: str = "IBM_API_KEY", channel: str | None = Non
             "Install it or run the compiler in --offline mode."
         ) from exc
 
-    channels = [channel] if channel else ["ibm_quantum_platform", "ibm_quantum"]
-    last_error: Exception | None = None
+    channels = [channel] if channel else ["ibm_quantum_platform", "ibm_cloud"]
+    errors: list[tuple[str, Exception]] = []
     for candidate in channels:
         try:
             return QiskitRuntimeService(channel=candidate, token=token)
         except Exception as exc:  # pragma: no cover - provider/version dependent
-            last_error = exc
+            errors.append((candidate, exc))
 
-    # Older runtime versions sometimes infer the channel from account metadata.
-    try:
-        return QiskitRuntimeService(token=token)
-    except Exception as exc:  # pragma: no cover - provider/version dependent
-        if last_error is not None:
-            raise RuntimeError(f"Could not initialize IBM Runtime service: {last_error}") from exc
-        raise
+    # Older runtimes let `QiskitRuntimeService(token=...)` discover a saved
+    # account.  Only attempt that path when no explicit channel was requested,
+    # and surface the *most relevant* error if everything fails (the last
+    # explicit-channel error, not a confusing "channel required" message
+    # raised by the bare call).
+    if channel is None:
+        try:
+            return QiskitRuntimeService(token=token)
+        except Exception:
+            pass
+
+    if errors:
+        attempted = ", ".join(name for name, _ in errors)
+        last = errors[-1][1]
+        raise RuntimeError(
+            "Could not initialize IBM Runtime service "
+            f"(attempted channels: {attempted}): {last}"
+        ) from last
+    raise RuntimeError("Could not initialize IBM Runtime service: no channels attempted.")
 
 
 def load_ibm_backend(
     backend_name: str = "ibm_boston",
     api_key_env: str = "IBM_API_KEY",
     channel: str | None = None,
+    token_file: str | os.PathLike[str] | None = DEFAULT_TOKEN_FILE,
 ):
     """Load an IBM backend, defaulting to Heron r3 ``ibm_boston``."""
 
-    service = load_ibm_service(api_key_env=api_key_env, channel=channel)
+    service = load_ibm_service(
+        api_key_env=api_key_env,
+        channel=channel,
+        token_file=token_file,
+    )
     if hasattr(service, "backend"):
         return service.backend(backend_name)
     return service.get_backend(backend_name)  # pragma: no cover - old runtime

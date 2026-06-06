@@ -1,0 +1,12 @@
+# Replace this file with a real token file named `.ibm_token` in the repo
+# root (or anywhere you prefer — point $IBM_API_KEY_FILE at its path).
+#
+# Resolution order used by `compiler_backend.heron.load_ibm_token`:
+#   1. $IBM_API_KEY  (recommended for HPC / SLURM)
+#   2. $IBM_API_KEY_FILE (path to a token file)
+#   3. ./.ibm_token in the current working directory
+#
+# This file is committed to the repo only as a placeholder so the path is
+# visible.  The real `.ibm_token` is gitignored.  Do NOT put a real token in
+# this file.
+paste-your-ibm-quantum-token-here

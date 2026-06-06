@@ -186,4 +186,9 @@ checkpoints/
 *.pt
 !tests/**/*.pt
 
+# IBM Quantum credentials (see compiler_backend.heron.load_ibm_token)
+.ibm_token
+.ibm_token.*
+!*.ibm_token.example
+
 
