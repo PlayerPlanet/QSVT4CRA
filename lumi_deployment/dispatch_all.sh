@@ -130,11 +130,9 @@ if [[ "$SKIP_STRONG" != "true" ]]; then
     if [[ "$DRY_RUN" == "true" ]]; then
         echo "[dry-run] would submit job array: cpu_strong_{8,16,32,64,128}.sh"
     else
-        STRONG_JOB=$(sbatch --export=ALL \
-            --array=8,16,32,64,128 \
-            --dependency="afterok:${SBI_JOB}" \
-            --parsable \
-            <(cat <<'EOF'
+        # Write the array script to a temp file (process substitution is fragile on LUMI)
+        STRONG_SCRIPT="$(mktemp -p "${TMPDIR:-/tmp}" qsvt4cra-strong-XXXXXX.sh)"
+        cat > "$STRONG_SCRIPT" <<'STRONG_EOF'
 #!/usr/bin/env bash
 #SBATCH --job-name=qsvt4cra-cpu-strong
 #SBATCH --account=project_465003017
@@ -153,8 +151,14 @@ export EXPERIMENT="${EXPERIMENT:-mc_ground_truth_weak}"
 export N_SCENARIOS="${N_SCENARIOS:-1000000}"
 SCRIPT_DIR="/scratch/project_465003017/${USER}/qsvt4cra-research/lumi_deployment"
 source "${SCRIPT_DIR}/dispatcher.sh"
-EOF
-        ))
+STRONG_EOF
+        chmod +x "$STRONG_SCRIPT"
+        STRONG_JOB=$(sbatch --export=ALL \
+            --array=8,16,32,64,128 \
+            --dependency="afterok:${SBI_JOB}" \
+            --parsable \
+            "$STRONG_SCRIPT")
+        rm -f "$STRONG_SCRIPT"
         echo "  -> Strong-scaling array job: $STRONG_JOB (waits for SBI $SBI_JOB)"
         STRONG_JOBS+=("$STRONG_JOB")
     fi
