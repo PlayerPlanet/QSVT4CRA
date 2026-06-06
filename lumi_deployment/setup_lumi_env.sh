@@ -31,14 +31,17 @@ export SCRATCH="/scratch/${SLURM_JOB_ACCOUNT}/${USER}"
 mkdir -p "$SCRATCH"
 
 # ---------------------------------------------------------------------------
-# 3. PYTHONPATH for staged packages (populated by rsync_to_lumi.sh)
+# 3. PYTHONPATH for staged packages (populated by pip --target=./site-packages)
 # ---------------------------------------------------------------------------
-export PYTHONPATH="${SCRATCH}/qsvt4cra-research:${SCRATCH}/site-packages:${PYTHONPATH:-}"
-export PYTHONUSERBASE="${SCRATCH}/python_user_base"
-export XDG_CACHE_HOME="${SCRATCH}/.cache"
-export HF_HOME="${SCRATCH}/huggingface"
-export TORCH_HOME="${SCRATCH}/torch"
-export WANDB_DIR="${SCRATCH}/wandb"
+# Note: project lives at $SCRATCH/qsvt4cra-research, pip --target dir is
+# $SCRATCH/qsvt4cra-research/site-packages. Both must be on PYTHONPATH.
+PROJECT_ROOT="${SCRATCH}/qsvt4cra-research"
+export PYTHONPATH="${PROJECT_ROOT}:${PROJECT_ROOT}/site-packages:${PYTHONPATH:-}"
+export PYTHONUSERBASE="${PROJECT_ROOT}/python_user_base"
+export XDG_CACHE_HOME="${PROJECT_ROOT}/.cache"
+export HF_HOME="${PROJECT_ROOT}/huggingface"
+export TORCH_HOME="${PROJECT_ROOT}/torch"
+export WANDB_DIR="${PROJECT_ROOT}/wandb"
 mkdir -p "$WANDB_DIR" "$HF_HOME" "$TORCH_HOME" "$XDG_CACHE_HOME" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
@@ -50,7 +53,7 @@ export JAX_ROCM_PLUGIN_PATH=""
 # We do NOT ship jax-rocm by default; only enable if user has installed it.
 if [[ -z "${JAX_PLATFORMS_FORCE:-}" ]]; then
     # Allow users to override (e.g., JAX_PLATFORMS_FORCE=cpu)
-    if [[ -d "${SCRATCH}/site-packages/jax" ]]; then
+    if [[ -d "${SCRATCH}/qsvt4cra-research/site-packages/jax" ]]; then
         export JAX_PLATFORMS=rocm
     else
         unset JAX_PLATFORMS  # fall back to default
