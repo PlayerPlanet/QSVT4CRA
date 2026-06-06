@@ -90,11 +90,58 @@ See `lumi_deployment/` in this repo:
 
 ---
 
-## 2. IQM Garnet / Emerald (real quantum hardware)
+## 2. IBM Heron r3 / `ibm_boston` simulation
+
+> Relevant for the Finnish-mortgage K=17 toy dataset introduced in
+> `Code/dataset_regions.py`.
+
+The preferred non-QPU hardware-in-the-loop workflow is:
+
+1. Build the K=17 Finnish regional mortgage circuit.
+2. Fetch current IBM backend target/calibration data for `ibm_boston` using
+   `$IBM_API_KEY`.
+3. Compile with `compiler_backend.heron.compile_for_backend`, which applies a
+   greedy calibration-aware initial layout over the Heron heavy-hex topology.
+4. Simulate with `AerSimulator.from_backend(backend)` on LUMI.
+
+Local command:
+
+```bash
+export IBM_API_KEY=...   # never echo this value into logs
+python -m experiments.heron_simulation \
+  --backend-name ibm_boston \
+  --degree 4 \
+  --shots 1024 \
+  --output results/heron_k17_ibm_boston_d4.json
+```
+
+LUMI command after syncing the repo and staged Python packages:
+
+```bash
+export IBM_API_KEY=...
+sbatch --export=ALL lumi_deployment/slurm_heron_simulation.sh
+```
+
+Use `DEGREE`, `SHOTS`, `BACKEND_NAME`, `TARGET_LOSS_FRACTION`, and `OUTPUT` to
+override defaults in the Slurm wrapper.  The wrapper intentionally checks that
+`IBM_API_KEY` is present but does not print it.
+
+### 2.1 Known Heron caveats
+
+| Issue | Symptom | Mitigation |
+|---|---|---|
+| Width is fine but depth is large | K=17 degree-4 smoke transpiles to hundreds of 2Q gates even before calibration-aware routing | Start with degree 4, then sweep 8/16 only after checking compiled depth and noisy result stability |
+| Backend access from LUMI | Runtime service cannot fetch `ibm_boston` | Submit with `sbatch --export=ALL` and verify outbound network/token policy |
+| `qiskit_finance` missing | `ModuleNotFoundError` in `Code.multivariateGCI` | `Code.multivariateGCI` now has a small internal `n_normal=2`-friendly normal-state-prep fallback |
+| Calibration drift | Re-running compilation chooses a different physical patch | Store JSON output; it includes selected physical qubits and gate counts |
+
+---
+
+## 3. IQM Garnet / Emerald (real quantum hardware)
 
 > Only relevant if/when QSVT4CRA targets IQM hardware. The paper itself is simulation-only.
 
-### 2.1 Transpilation failure modes
+### 3.1 Transpilation failure modes
 
 | Issue | Symptom | Fix |
 |---|---|---|
@@ -102,7 +149,7 @@ See `lumi_deployment/` in this repo:
 | `memory='x'` measurement | `KeyError` in `internal_helpers` | Add `MX`/`MRX`/`MY`/`MRY` measurement gate extensions (see JunctionHackathon `internal_helpers.py`) |
 | SWAP insertion on dense→physical map | 24+ SWAPs per circuit | Use pre-computed dense→physical layout mapping (no SWAP) |
 
-### 2.2 Dense→physical qubit map (FakeGarnet 54q surface code)
+### 3.2 Dense→physical qubit map (FakeGarnet 54q surface code)
 
 ```
 {0:1, 1:0, 2:3, 3:7, 4:5, 5:4, 6:9, 7:8, 8:13, 9:12, 10:6, 11:11,
@@ -111,13 +158,13 @@ See `lumi_deployment/` in this repo:
 
 This eliminates **all SWAP gates** when transpiling Stim→Garnet circuits, yielding 24 native CZ / 38 R / 17 measure / depth 9.
 
-### 2.3 When to bring these to QSVT4CRA
+### 3.3 When to bring these to QSVT4CRA
 
 Only when the experiment is **hardware-in-the-loop**. For pure-simulation quantum resource estimates (Qiskit Aer), none of this is needed.
 
 ---
 
-## 3. Cross-references
+## 4. Cross-references
 
 - `projects/JunctionHackathon/internal_helpers.py` — measurement-gate extensions
 - `projects/JunctionHackathon-lumi/lumi_deployment/` — LUMI Slurm wrappers

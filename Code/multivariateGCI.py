@@ -30,7 +30,52 @@ import numpy as np
 from scipy.stats.distributions import norm
 from qiskit.circuit import QuantumCircuit
 from qiskit.circuit.library import PolynomialPauliRotations, LinearPauliRotations
-from qiskit_finance.circuit.library import NormalDistribution
+
+try:  # pragma: no cover - depends on optional qiskit-finance install
+    from qiskit_finance.circuit.library import NormalDistribution  # type: ignore
+except ImportError:  # pragma: no cover - exercised in lightweight CI/envs
+    NormalDistribution = None  # type: ignore
+
+
+def _normal_distribution_circuit(
+    n_normal: int,
+    mu: float,
+    sigma: float,
+    bounds: tuple[float, float],
+) -> QuantumCircuit:
+    """Return a small truncated-normal state-preparation circuit.
+
+    The original implementation uses ``qiskit_finance.circuit.library``.
+    Some modern Qiskit 2.x environments no longer ship qiskit-finance by
+    default, so this local fallback keeps the K=17 Finnish-mortgage toy
+    dataset buildable.  For the paper/default setting ``n_normal=2`` this is
+    tiny and transpiles to ordinary single/two-qubit gates.
+    """
+    if NormalDistribution is not None:
+        return NormalDistribution(n_normal, mu, sigma, bounds=bounds)
+
+    grid = np.linspace(bounds[0], bounds[1], 2**n_normal, dtype=np.float64)
+    probs = norm.pdf(grid, loc=mu, scale=sigma)
+    probs = np.clip(probs, 0.0, None)
+    total = float(np.sum(probs))
+    if total <= 0.0:
+        probs = np.ones_like(probs) / len(probs)
+    else:
+        probs = probs / total
+    amplitudes = np.sqrt(probs).astype(complex)
+    amplitudes = amplitudes / np.linalg.norm(amplitudes)
+
+    qc = QuantumCircuit(n_normal, name="P(Z)")
+    try:
+        from qiskit.circuit.library import StatePreparation
+
+        qc.append(StatePreparation(amplitudes), range(n_normal))
+    except Exception:
+        # Last-resort compatibility path.  ``initialize`` may decompose through
+        # reset in some Qiskit versions, but the Heron compiler path strips to
+        # backend ISA after this circuit has been converted to a gate.
+        qc.initialize(amplitudes, range(n_normal))
+    return qc
 
 # =============================================================================
 # =============================================================================
@@ -112,10 +157,10 @@ class MultivariateGCI_Poly(QuantumCircuit):
         # create normal distributions        
         normal_distributions = []
         for i in range(self.sectors):
-            dist = NormalDistribution(
+            dist = _normal_distribution_circuit(
                         n_normal,
                         0,
-                        1, 
+                        1,
                         bounds=(-normal_max_value, normal_max_value)
                     )
             normal_distributions.append(dist)
@@ -213,10 +258,10 @@ class MultivariateGCI_Linear(QuantumCircuit):
         # create normal distributions        
         normal_distributions = []
         for i in range(self.sectors):
-            dist = NormalDistribution(
+            dist = _normal_distribution_circuit(
                         n_normal,
                         0,
-                        1, 
+                        1,
                         bounds=(-normal_max_value, normal_max_value)
                     )
             normal_distributions.append(dist)
