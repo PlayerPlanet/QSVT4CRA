@@ -187,3 +187,9 @@ checkpoints/
 !tests/**/*.pt
 
 
+
+# LUMI session results (pulled from scratch)
+results_lumi/
+figures_lumi/
+checkpoints_lumi/
+
