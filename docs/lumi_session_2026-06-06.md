@@ -74,14 +74,25 @@
 All five strong-scaling points completed in **exactly 10m27s**:
 - 8 CPUs, 16, 32, 64, 128 — same wall time.
 
-This is **not a bug**; it's a workload problem:
-- K=10, 1M scenarios, NumPy copula sampling + VaR/CVaR is a **small problem**
-- Per-sample VaR/CVaR kernel is sequential (Amdahl's serial fraction dominates)
-- Joblib dispatch overhead ~5s + Python startup ~5s + actual compute ~5 min
-- The remaining 5 min is spent in I/O on the Lustre filesystem
+**Root cause**: Slurm allocates a whole node to 1 task regardless of
+`--cpus-per-task` (because the standard partition has 128 CPUs/node
+and there's only 1 task). All 5 jobs effectively ran with **128 CPUs**
+in `SLURM_CPUS_ON_NODE`, so the wall time is identical.
+
+This is a profile/infrastructure issue, not a workload problem:
+- `--cpus-per-task=8` on a 128-CPU node with 1 task means
+  "this task MAY use up to 8 CPUs" but Slurm doesn't enforce
+  isolation. Joblib Parallel(n_jobs=8) on top of an 128-CPU allocation
+  runs at the same speed as Parallel(n_jobs=128).
+- To do real strong scaling, would need either:
+  - `taskset -c 0-7` to pin the worker to specific cores
+  - Or `--exclusive` + `--mem=0` so Slurm can't oversubscribe
+  - Or set `OMP_NUM_THREADS=8` env var in the profile to constrain
+    OpenMP thread count
 
 **Recommendation for a meaningful scaling study**:
-- Increase N_SCENARIOS to 10M or 100M (currently 1M)
+- Fix the profiles to use `taskset` or `OMP_NUM_THREADS` for actual CPU binding
+- Increase N_SCENARIOS to 10M or 100M
 - Or use a larger K (e.g., K=100 or K=1000)
 - Or add the weak-scaling matrix (1, 2, 4, 8 nodes) where work scales
   with resources — this would show sub-linear speedup due to network
