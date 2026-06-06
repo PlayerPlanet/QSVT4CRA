@@ -1,4 +1,8 @@
 annotated-types==0.7.0
+numpyro>=0.18
+sbi==0.22.0
+torch>=2.0
+wandb>=0.16
 asttokens==3.0.0
 beautifulsoup4==4.13.4
 certifi==2025.1.31

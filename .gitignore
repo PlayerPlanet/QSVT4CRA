@@ -174,4 +174,16 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# sbi 0.22.0 training artifacts (TensorBoard event files)
+sbi-logs/
+
+# Generated research artifacts
+figures/
+results/
+*.npz
+!tests/**/*.npz
+checkpoints/
+*.pt
+!tests/**/*.pt
+
 
