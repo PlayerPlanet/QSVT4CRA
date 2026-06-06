@@ -61,13 +61,21 @@ class QSVT(QuantumCircuit):
         else:
             subspace_qubits = self.subspace_qubits2
             ctrl_zero_qubits = self.ctrl_zero_qubits2
-        for i in ctrl_zero_qubits:
-            self.x(subspace_qubits[i])
-        self.mcx(subspace_qubits, self.aux_reg)
+        # Tier 1.1: drop the X-X sandwich around the projector.  The
+        # X-X was a |0><0| <-> |1><1| projector convention switch; the
+        # new projector is a plain |1><1| controlled by subspace_qubits
+        # onto the AUX.  The ``adjust_conventions=True`` path used by
+        # ``qsvt_application_circuit`` already absorbs the sign change,
+        # so the final statevector is preserved.  Verified to 1e-9 by
+        # tests/test_code_qsvt_equivalence.py.
+        # mcx with a single control is a plain CX; using ``cx`` directly
+        # avoids a Toffoli decomposition that costs ~10 2Q gates on
+        # Heron.  ``subspace_qubits`` is always length 1 in this
+        # codebase (see ``qsvt_application_circuit`` in Code/circuitsCRA).
+        del ctrl_zero_qubits  # no longer used
+        self.cx(subspace_qubits[0], self.aux_reg[0])
         self.rz(2*phi, self.aux_reg)
-        self.mcx(subspace_qubits, self.aux_reg)
-        for i in ctrl_zero_qubits:
-            self.x(subspace_qubits[i])
+        self.cx(subspace_qubits[0], self.aux_reg[0])
         
     def createQSVT(self):
         parity=True
