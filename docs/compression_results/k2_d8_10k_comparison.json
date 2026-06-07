@@ -1,0 +1,185 @@
+{
+  "summary": "K=2 / degree 8 / 10k shots is the first time the rel-err trend reverses vs the previous run: 6.77x vs 4.25x at d=4.  The d=8 polynomial was already sharp at d=4 for the 4-outcome K=2 loss distribution, so the extra 100 depth just brings back gate-decoherence noise.  d=4 is the sweet spot for K=2; d=8 overshoots.  Pending: K=3 / d=4 to find the joint sweet spot.",
+  "rounds": [
+    {
+      "label": "K=17, d=4, 256 shots (Tier-1)",
+      "job_id": "d8ib6edv8cos73f5cj0g",
+      "K": 17,
+      "degree": 4,
+      "shots": 256,
+      "cal_shots": 128,
+      "regions": "first 17 regions",
+      "compiled_depth": 1285,
+      "two_qubit_proxy": 829,
+      "p_qpu_mitigated": 0.2421875,
+      "p_qpu_ci95": [
+        0.18970762002563246,
+        0.29466737997436754
+      ],
+      "classical_tail": 0.00033,
+      "classical_var_0_95": 621688309.6,
+      "classical_cvar_0_95": 2672347771.637579,
+      "abs_error": 0.2418575,
+      "rel_error": 732.9015151515151
+    },
+    {
+      "label": "K=10, d=4, 20k shots (Tier 2.5)",
+      "job_id": "d8ibjhtv8cos73f5d0r0",
+      "K": 10,
+      "degree": 4,
+      "shots": 20000,
+      "cal_shots": 1024,
+      "regions": "first 10 regions",
+      "compiled_depth": 919,
+      "two_qubit_proxy": 509,
+      "p_qpu_mitigated": 0.2864,
+      "p_qpu_ci95": [
+        0.28013451057911676,
+        0.2926654894208832
+      ],
+      "classical_tail": 0.00947,
+      "classical_var_0_95": 481749868.8,
+      "classical_cvar_0_95": 2719804781.577719,
+      "abs_error": 0.27693,
+      "rel_error": 29.242872228088704
+    },
+    {
+      "label": "K=3, d=2, 10k shots",
+      "job_id": "d8ibqfc2upec739m1cf0",
+      "K": 3,
+      "degree": 2,
+      "shots": 10000,
+      "cal_shots": 1024,
+      "regions": [
+        "Uusimaa",
+        "Southwest Finland",
+        "Satakunta"
+      ],
+      "compiled_depth": 206,
+      "two_qubit_proxy": 124,
+      "p_qpu_mitigated": 0.1028,
+      "p_qpu_ci95": [
+        0.09684752937129464,
+        0.10875247062870537
+      ],
+      "classical_tail": 0.00923,
+      "classical_var_0_95": 0.0,
+      "classical_cvar_0_95": 3636067783.7229934,
+      "abs_error": 0.09357,
+      "rel_error": 10.13759479956663
+    },
+    {
+      "label": "K=2, d=2, 10k shots (minimum)",
+      "job_id": "d8ibt0tv8cos73f5dcm0",
+      "K": 2,
+      "degree": 2,
+      "shots": 10000,
+      "cal_shots": 1024,
+      "regions": [
+        "Uusimaa",
+        "Southwest Finland"
+      ],
+      "compiled_depth": 170,
+      "two_qubit_proxy": 75,
+      "p_qpu_mitigated": 0.0833,
+      "p_qpu_ci95": [
+        0.07788383124177246,
+        0.08871616875822753
+      ],
+      "classical_tail": 0.009075,
+      "classical_var_0_95": 0.0,
+      "classical_cvar_0_95": 4990911756.33277,
+      "abs_error": 0.074225,
+      "rel_error": 8.179063360881543
+    },
+    {
+      "label": "K=2, d=4, 10k shots (best so far)",
+      "job_id": "d8ic08pe8nrc73bi56tg",
+      "K": 2,
+      "degree": 4,
+      "shots": 10000,
+      "cal_shots": 1024,
+      "regions": [
+        "Uusimaa",
+        "Southwest Finland"
+      ],
+      "compiled_depth": 228,
+      "two_qubit_proxy": 101,
+      "p_qpu_mitigated": 0.0476,
+      "p_qpu_ci95": [
+        0.04342679959283047,
+        0.05177320040716954
+      ],
+      "classical_tail": 0.009075,
+      "classical_var_0_95": 0.0,
+      "classical_cvar_0_95": 4990911756.33277,
+      "abs_error": 0.038525000000000004,
+      "rel_error": 4.245179063360882
+    },
+    {
+      "label": "K=2, d=8, 10k shots (NEW: overshoots)",
+      "job_id": "d8ic32dv8cos73f5djlg",
+      "K": 2,
+      "degree": 8,
+      "shots": 10000,
+      "cal_shots": 1024,
+      "regions": [
+        "Uusimaa",
+        "Southwest Finland"
+      ],
+      "compiled_depth": 331,
+      "two_qubit_proxy": 140,
+      "p_qpu_mitigated": 0.0705,
+      "p_qpu_ci95": [
+        0.06548263926351712,
+        0.07551736073648287
+      ],
+      "classical_tail": 0.009075,
+      "classical_var_0_95": 0.0,
+      "classical_cvar_0_95": 4990911756.33277,
+      "abs_error": 0.061424999999999993,
+      "rel_error": 6.768595041322314
+    }
+  ],
+  "depth_summary": {
+    "K=17 d=4 (baseline)": 1285,
+    "K=10 d=4 (Tier 2.5)": 919,
+    "K=3  d=2": 206,
+    "K=2  d=2": 170,
+    "K=2  d=4 (best)": 228,
+    "K=2  d=8 (overshoots)": 331
+  },
+  "rel_error_summary": {
+    "K=17 d=4 (baseline)": 732.9015151515151,
+    "K=10 d=4 (Tier 2.5)": 29.242872228088704,
+    "K=3  d=2": 10.13759479956663,
+    "K=2  d=2": 8.179063360881543,
+    "K=2  d=4 (best)": 4.245179063360882,
+    "K=2  d=8 (overshoots)": 6.768595041322314
+  },
+  "k2_degree_sweep": {
+    "d=2 (10k shots)": {
+      "depth": 170,
+      "2Q": 75,
+      "p_qpu": 0.0833,
+      "rel_err": 8.179063360881543
+    },
+    "d=4 (10k shots)": {
+      "depth": 228,
+      "2Q": 101,
+      "p_qpu": 0.0476,
+      "rel_err": 4.245179063360882
+    },
+    "d=8 (10k shots)": {
+      "depth": 331,
+      "2Q": 140,
+      "p_qpu": 0.0705,
+      "rel_err": 6.768595041322314
+    }
+  },
+  "takeaways": [
+    "K=2 / d=8 overshoots: depth 331 (vs 228 at d=4), rel err 6.77x (vs 4.25x).  The d=8 polynomial was already sharp enough at d=4 for the 4-outcome K=2 distribution; the extra 100 depth just brings back gate-decoherence noise.",
+    "At K=2 the d=2 -> d=4 -> d=8 progression: 8.2x -> 4.25x -> 6.77x.  d=4 is the sweet spot.  More phases win only until the depth-noise budget is exhausted; beyond that, more phases hurt.",
+    "Pending: K=3 / d=4 to see if d=4 also wins at K=3 (where the 8-outcome distribution has more structure for the polynomial to resolve)."
+  ]
+}

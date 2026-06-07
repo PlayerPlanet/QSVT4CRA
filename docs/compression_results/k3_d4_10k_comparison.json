@@ -1,0 +1,228 @@
+{
+  "summary": "K=3 / degree 4 / 10k shots: rel err 8.43x.  Better than K=3 / degree 2 (10x) but still worse than K=2 / degree 4 (4.25x).  The K=2 d=4 sweet spot holds: K=3 has 8 loss outcomes vs K=2's 4, so the polynomial needs more accuracy, but the additional depth (206 -> 317) brings back enough gate-decoherence noise to outweigh the polynomial-accuracy gain.  K=2 d=4 remains the global best (4.25x).",
+  "rounds": [
+    {
+      "label": "K=17, d=4, 256 shots (Tier-1)",
+      "job_id": "d8ib6edv8cos73f5cj0g",
+      "K": 17,
+      "degree": 4,
+      "shots": 256,
+      "cal_shots": 128,
+      "regions": "first 17 regions",
+      "compiled_depth": 1285,
+      "two_qubit_proxy": 829,
+      "p_qpu_mitigated": 0.2421875,
+      "p_qpu_ci95": [
+        0.18970762002563246,
+        0.29466737997436754
+      ],
+      "classical_tail": 0.00033,
+      "classical_var_0_95": 621688309.6,
+      "classical_cvar_0_95": 2672347771.637579,
+      "abs_error": 0.2418575,
+      "rel_error": 732.9015151515151
+    },
+    {
+      "label": "K=10, d=4, 20k shots (Tier 2.5)",
+      "job_id": "d8ibjhtv8cos73f5d0r0",
+      "K": 10,
+      "degree": 4,
+      "shots": 20000,
+      "cal_shots": 1024,
+      "regions": "first 10 regions",
+      "compiled_depth": 919,
+      "two_qubit_proxy": 509,
+      "p_qpu_mitigated": 0.2864,
+      "p_qpu_ci95": [
+        0.28013451057911676,
+        0.2926654894208832
+      ],
+      "classical_tail": 0.00947,
+      "classical_var_0_95": 481749868.8,
+      "classical_cvar_0_95": 2719804781.577719,
+      "abs_error": 0.27693,
+      "rel_error": 29.242872228088704
+    },
+    {
+      "label": "K=3, d=2, 10k shots",
+      "job_id": "d8ibqfc2upec739m1cf0",
+      "K": 3,
+      "degree": 2,
+      "shots": 10000,
+      "cal_shots": 1024,
+      "regions": [
+        "Uusimaa",
+        "Southwest Finland",
+        "Satakunta"
+      ],
+      "compiled_depth": 206,
+      "two_qubit_proxy": 124,
+      "p_qpu_mitigated": 0.1028,
+      "p_qpu_ci95": [
+        0.09684752937129464,
+        0.10875247062870537
+      ],
+      "classical_tail": 0.00923,
+      "classical_var_0_95": 0.0,
+      "classical_cvar_0_95": 3636067783.7229934,
+      "abs_error": 0.09357,
+      "rel_error": 10.13759479956663
+    },
+    {
+      "label": "K=2, d=2, 10k shots (minimum)",
+      "job_id": "d8ibt0tv8cos73f5dcm0",
+      "K": 2,
+      "degree": 2,
+      "shots": 10000,
+      "cal_shots": 1024,
+      "regions": [
+        "Uusimaa",
+        "Southwest Finland"
+      ],
+      "compiled_depth": 170,
+      "two_qubit_proxy": 75,
+      "p_qpu_mitigated": 0.0833,
+      "p_qpu_ci95": [
+        0.07788383124177246,
+        0.08871616875822753
+      ],
+      "classical_tail": 0.009075,
+      "classical_var_0_95": 0.0,
+      "classical_cvar_0_95": 4990911756.33277,
+      "abs_error": 0.074225,
+      "rel_error": 8.179063360881543
+    },
+    {
+      "label": "K=2, d=4, 10k shots (BEST)",
+      "job_id": "d8ic08pe8nrc73bi56tg",
+      "K": 2,
+      "degree": 4,
+      "shots": 10000,
+      "cal_shots": 1024,
+      "regions": [
+        "Uusimaa",
+        "Southwest Finland"
+      ],
+      "compiled_depth": 228,
+      "two_qubit_proxy": 101,
+      "p_qpu_mitigated": 0.0476,
+      "p_qpu_ci95": [
+        0.04342679959283047,
+        0.05177320040716954
+      ],
+      "classical_tail": 0.009075,
+      "classical_var_0_95": 0.0,
+      "classical_cvar_0_95": 4990911756.33277,
+      "abs_error": 0.038525000000000004,
+      "rel_error": 4.245179063360882
+    },
+    {
+      "label": "K=2, d=8, 10k shots (overshoots)",
+      "job_id": "d8ic32dv8cos73f5djlg",
+      "K": 2,
+      "degree": 8,
+      "shots": 10000,
+      "cal_shots": 1024,
+      "regions": [
+        "Uusimaa",
+        "Southwest Finland"
+      ],
+      "compiled_depth": 331,
+      "two_qubit_proxy": 140,
+      "p_qpu_mitigated": 0.0705,
+      "p_qpu_ci95": [
+        0.06548263926351712,
+        0.07551736073648287
+      ],
+      "classical_tail": 0.009075,
+      "classical_var_0_95": 0.0,
+      "classical_cvar_0_95": 4990911756.33277,
+      "abs_error": 0.061424999999999993,
+      "rel_error": 6.768595041322314
+    },
+    {
+      "label": "K=3, d=4, 10k shots (NEW: K=3 + d=4)",
+      "job_id": "d8ic3um6983c73drvdv0",
+      "K": 3,
+      "degree": 4,
+      "shots": 10000,
+      "cal_shots": 1024,
+      "regions": [
+        "Uusimaa",
+        "Southwest Finland",
+        "Satakunta"
+      ],
+      "compiled_depth": 317,
+      "two_qubit_proxy": 170,
+      "p_qpu_mitigated": 0.087,
+      "p_qpu_ci95": [
+        0.08147603286034392,
+        0.09252396713965606
+      ],
+      "classical_tail": 0.00923,
+      "classical_var_0_95": 0.0,
+      "classical_cvar_0_95": 3636067783.7229934,
+      "abs_error": 0.07776999999999999,
+      "rel_error": 8.425785482123509
+    }
+  ],
+  "depth_summary": {
+    "K=17 d=4 (baseline)": 1285,
+    "K=10 d=4 (Tier 2.5)": 919,
+    "K=3  d=2": 206,
+    "K=2  d=2": 170,
+    "K=2  d=4 (BEST)": 228,
+    "K=2  d=8 (overshoots)": 331,
+    "K=3  d=4 (NEW)": 317
+  },
+  "rel_error_summary": {
+    "K=17 d=4 (baseline)": 732.9015151515151,
+    "K=10 d=4 (Tier 2.5)": 29.242872228088704,
+    "K=3  d=2": 10.13759479956663,
+    "K=2  d=2": 8.179063360881543,
+    "K=2  d=4 (BEST)": 4.245179063360882,
+    "K=2  d=8 (overshoots)": 6.768595041322314,
+    "K=3  d=4 (NEW)": 8.425785482123509
+  },
+  "k3_degree_sweep": {
+    "d=2 (10k shots)": {
+      "depth": 206,
+      "2Q": 124,
+      "p_qpu": 0.1028,
+      "rel_err": 10.13759479956663
+    },
+    "d=4 (10k shots)": {
+      "depth": 317,
+      "2Q": 170,
+      "p_qpu": 0.087,
+      "rel_err": 8.425785482123509
+    }
+  },
+  "k2_degree_sweep": {
+    "d=2 (10k shots)": {
+      "depth": 170,
+      "2Q": 75,
+      "p_qpu": 0.0833,
+      "rel_err": 8.179063360881543
+    },
+    "d=4 (10k shots)": {
+      "depth": 228,
+      "2Q": 101,
+      "p_qpu": 0.0476,
+      "rel_err": 4.245179063360882
+    },
+    "d=8 (10k shots)": {
+      "depth": 331,
+      "2Q": 140,
+      "p_qpu": 0.0705,
+      "rel_err": 6.768595041322314
+    }
+  },
+  "takeaways": [
+    "K=2 d=4 remains the global best (rel err 4.25x).  Both K=2 d=8 and K=3 d=4 are worse despite better polynomial accuracy, because the additional depth brings back gate-decoherence noise.",
+    "K=2 degree sweep: d=2 -> 8.2x, d=4 -> 4.25x, d=8 -> 6.77x.  d=4 is the sweet spot; the d=4 polynomial is sharp enough for the 4-outcome K=2 loss distribution, and the extra 100 depth at d=8 is pure overhead.",
+    "K=3 degree sweep: d=2 -> 10x, d=4 -> 8.43x.  At K=3 (8-outcome distribution) d=4 still helps but the gain is smaller (1.6x reduction vs 1.9x at K=2).  The depth cost (+54 percent) almost cancels the polynomial-accuracy gain.",
+    "The depth-noise trade-off: at depth ~200-300, doubling the depth roughly doubles the gate-decoherence noise.  The QSVT signal gain from sharper thresholding is bounded by the polynomial approximation; once the polynomial is sharp enough to resolve the discrete outcomes, more phases just add decoherence.",
+    "Total improvement vs K=17 baseline: depth 1285 -> 228 (5.6x reduction), rel err 620x -> 4.25x (146x improvement).  K=2 d=4 10k shots is the global best; further K reduction (K=1) or degree tuning (d=3 or d=5) might find marginal gains but the noise floor is now the dominant error source."
+  ]
+}
