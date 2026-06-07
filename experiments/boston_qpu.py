@@ -74,74 +74,160 @@ from compiler_backend.heron import (
 # ---------------------------------------------------------------------------
 
 
-def build_finnish_mortgage_qsvt_circuit(
-    degree: int = 4,
-    target_loss_fraction: float = 0.5,
-    k: int = 17,
-):
-    """Build the Finnish mortgage expected-probability circuit with real
-    Chebyshev threshold phases.
+def _load_finnish_mortgage_dataset(k: int | None = None) -> dict:
+    """Load the Finnish mortgage dataset, optionally truncated to its
+    first ``k`` regions.
 
-    Parameters
-    ----------
-    degree : int
-        QSVT polynomial degree.  ``max(2, degree)`` phases are produced.
-    target_loss_fraction : float
-        Loss threshold as a fraction of total portfolio LGD.
-    k : int
-        Number of regions / counterparties.  The Finnish mortgage dataset
-        (``Code.dataset_regions``) ships with K=17.  For ``k < 17`` we
-        take the first ``k`` regions of that dataset (Uusimaa, Southwest
-        Finland, Satakunta, Kanta-Häme, Pirkanmaa, Päijät-Häme,
-        Kymenlaakso, South Karelia, South Savo, North Savo) so the
-        benchmark retains data provenance.  For ``k > 17`` we raise.
+    Returns a dataset dict with the keys consumed by
+    ``build_qsvt_circuit_from_dataset`` and ``classical_reference``:
 
-    Returns
-    -------
-    circuit, meta
-        ``circuit`` is the QSVT QuantumCircuit; ``meta`` includes the
-        AUX qubit index (the QSVT projector answer bit) and the
-        dataset-level scalars.
+        K : int
+        regions : list[str]
+        lgd : list[float]   (length K)
+        p_zeros : list[float]   (length K)
+        rhos : list[float]   (length K)
+        F_values : list[list[float]]   (shape (K, n_z))
+        n_z : int
+        z_max : float
+        source : str
     """
 
     from Code import dataset_regions as ds
-    from Code.circuitsCRA import get_expected_probability_circuit
-    from Code.multivariateGCI import MultivariateGCI_Linear
-    from qsvt.approximator import approximate_threshold
 
-    if k < 1 or k > ds.K:
+    full_K = ds.K
+    if k is not None and (k < 1 or k > full_K):
         raise ValueError(
-            f"k must be in [1, {ds.K}] (the Finnish dataset has {ds.K} regions); got k={k}"
+            f"k must be in [1, {full_K}] (the Finnish dataset has {full_K} regions); got k={k}"
         )
 
-    # Truncate the dataset to the first k regions.  This preserves
-    # data provenance: K=10 is a sub-portfolio of the K=17 mortgage
-    # portfolio, not a synthetic Gaussian copula replacement.
-    if k == ds.K:
+    if k is None or k == full_K:
         regions = list(ds.regions)
         lgd = list(map(float, ds.lgd))
         p_zeros = list(map(float, ds.p_zeros))
         rhos = list(map(float, ds.rhos))
         f_values = [list(map(float, row)) for row in ds.F_values]
+        source = "Code.dataset_regions (full)"
     else:
         regions = list(ds.regions)[:k]
         lgd = list(map(float, ds.lgd))[:k]
         p_zeros = list(map(float, ds.p_zeros))[:k]
         rhos = list(map(float, ds.rhos))[:k]
         f_values = [list(map(float, row)) for row in ds.F_values[:k]]
+        source = f"Code.dataset_regions (first {k} regions)"
+
+    return {
+        "K": len(regions),
+        "regions": regions,
+        "lgd": lgd,
+        "p_zeros": p_zeros,
+        "rhos": rhos,
+        "F_values": f_values,
+        "n_z": int(ds.n_z),
+        "z_max": float(ds.z_max),
+        "source": source,
+    }
+
+
+def _synthetic_gaussian_dataset(
+    K: int,
+    n_z: int = 2,
+    z_max: float = 2.0,
+    seed: int = 0,
+    p_zero_range: tuple[float, float] = (0.005, 0.02),
+    rho: float = 0.09,
+    lgd_range: tuple[float, float] = (1e8, 1e9),
+) -> dict:
+    """Build a synthetic K-region Gaussian factor-copula dataset for
+    benchmarks that aren't tied to the Finnish mortgage data.
+
+    The parameterisation mirrors the per-region GCI model
+    (``Code.multivariateGCI.MultivariateGCI_Linear``):
+
+      * per-region default probability ``p_zero`` is uniform in
+        ``p_zero_range``;
+      * per-region sensitivity ``rho`` is constant at ``rho``;
+      * per-region LGD is uniform in ``lgd_range`` (in EUR);
+      * per-region latent-Z factor loading ``F_i`` is a row of
+        standard normals, shape ``(n_z,)``;
+      * the latent Z is truncated to ``[-z_max, +z_max]`` to match the
+        state-prep truncation in the GCI.
+
+    Use this for any K the Finnish dataset doesn't support (e.g., K=4,
+    K=25, K=50).
+    """
+
+    if K < 1:
+        raise ValueError(f"K must be >= 1, got K={K}")
+    if n_z < 1:
+        raise ValueError(f"n_z must be >= 1, got n_z={n_z}")
+
+    rng = np.random.default_rng(seed)
+    p_zeros = list(map(float, rng.uniform(*p_zero_range, size=K)))
+    rhos = [float(rho)] * K
+    lgd = list(map(float, rng.uniform(*lgd_range, size=K)))
+    f_values = [list(map(float, row)) for row in rng.standard_normal(size=(K, n_z))]
+    regions = [f"region_{i:02d}" for i in range(K)]
+
+    return {
+        "K": K,
+        "regions": regions,
+        "lgd": lgd,
+        "p_zeros": p_zeros,
+        "rhos": rhos,
+        "F_values": f_values,
+        "n_z": int(n_z),
+        "z_max": float(z_max),
+        "source": f"synthetic Gaussian factor copula (K={K}, n_z={n_z}, seed={seed})",
+    }
+
+
+def build_qsvt_circuit_from_dataset(
+    dataset: dict,
+    degree: int = 4,
+    target_loss_fraction: float = 0.5,
+):
+    """Build the expected-probability QSVT circuit from a fully-specified
+    dataset dict (any K, any n_z, any region/parameter set).
+
+    Parameters
+    ----------
+    dataset : dict
+        A dataset dict with the keys produced by
+        ``_load_finnish_mortgage_dataset`` or ``_synthetic_gaussian_dataset``:
+
+            K, regions, lgd, p_zeros, rhos, F_values, n_z, z_max, source.
+    degree : int
+        QSVT polynomial degree (``max(2, degree)`` phases).
+    target_loss_fraction : float
+        Loss threshold as a fraction of total portfolio LGD.
+
+    Returns
+    -------
+    circuit, meta
+        ``circuit`` is the QSVT QuantumCircuit; ``meta`` includes the
+        AUX qubit index (the QSVT projector answer bit) and the
+        dataset-level scalars (including ``data_source`` from
+        ``dataset["source"]``).
+    """
+
+    from Code.circuitsCRA import get_expected_probability_circuit
+    from Code.multivariateGCI import MultivariateGCI_Linear
+    from qsvt.approximator import approximate_threshold
+
+    K = int(dataset["K"])
+    if K < 1:
+        raise ValueError(f"dataset['K'] must be >= 1, got {K}")
 
     uncertainty_model = MultivariateGCI_Linear(
-        n_normal=ds.n_z,
-        normal_max_value=ds.z_max,
-        p_zeros=p_zeros,
-        rhos=rhos,
-        F_list=f_values,
+        n_normal=int(dataset["n_z"]),
+        normal_max_value=float(dataset["z_max"]),
+        p_zeros=list(dataset["p_zeros"]),
+        rhos=list(dataset["rhos"]),
+        F_list=[list(row) for row in dataset["F_values"]],
     )
-    max_loss = float(np.sum(lgd))
+    max_loss = float(np.sum(dataset["lgd"]))
     target_loss = target_loss_fraction * max_loss
 
-    # Real Chebyshev-QSP phases for the even threshold function with the same
-    # normalized target/middle the rest of the codebase uses.
     degree = max(2, int(degree))
     phases = approximate_threshold(
         threshold=0.5,
@@ -151,9 +237,9 @@ def build_finnish_mortgage_qsvt_circuit(
     )
 
     circuit, _objective, ok = get_expected_probability_circuit(
-        K=k,
+        K=K,
         uncertainity_model=uncertainty_model,
-        lgd=lgd,
+        lgd=list(dataset["lgd"]),
         target_loss=target_loss,
         phases=phases,
         threshold=0.5,
@@ -161,29 +247,69 @@ def build_finnish_mortgage_qsvt_circuit(
     if not ok:
         raise RuntimeError("get_expected_probability_circuit returned ok=False")
 
-    # Register order from Code.circuitsCRA.get_expected_probability_circuit:
-    #   z (n_z) | State (K) | Target (1) | aux_qubit (1)
-    # The QSVT answer bit is the AUX qubit (last), not the Target.
     aux_qubit_index = circuit.num_qubits - 1
     target_qubit_index = circuit.num_qubits - 2
     meta = {
-        "K": k,
-        "regions": regions,
+        "K": K,
+        "regions": list(dataset["regions"]),
         "sum_lgd": max_loss,
         "target_loss": target_loss,
         "target_loss_fraction": target_loss_fraction,
         "target_qubit_index": target_qubit_index,
         "aux_qubit_index": aux_qubit_index,
         "phases": [float(p) for p in phases],
-        "lgd": lgd,
-        "p_zeros": p_zeros,
-        "rhos": rhos,
-        "F_values": f_values,
-        "data_source": "Code.dataset_regions (first k regions)"
-        if k < ds.K
-        else "Code.dataset_regions (full)",
+        "lgd": list(map(float, dataset["lgd"])),
+        "p_zeros": list(map(float, dataset["p_zeros"])),
+        "rhos": list(map(float, dataset["rhos"])),
+        "F_values": [list(map(float, row)) for row in dataset["F_values"]],
+        "n_z": int(dataset["n_z"]),
+        "z_max": float(dataset["z_max"]),
+        "data_source": dataset.get("source", "unspecified"),
     }
     return circuit, meta
+
+
+def build_finnish_mortgage_qsvt_circuit(
+    degree: int = 4,
+    target_loss_fraction: float = 0.5,
+    k: int = 17,
+):
+    """Build the Finnish mortgage expected-probability circuit with real
+    Chebyshev threshold phases.
+
+    This is a thin convenience wrapper around
+    ``build_qsvt_circuit_from_dataset`` that loads the first ``k``
+    regions of the Finnish mortgage dataset (``Code.dataset_regions``).
+    For any other K (or custom data), use
+    ``_synthetic_gaussian_dataset`` + ``build_qsvt_circuit_from_dataset``
+    directly.
+
+    Parameters
+    ----------
+    degree : int
+        QSVT polynomial degree.  ``max(2, degree)`` phases are produced.
+    target_loss_fraction : float
+        Loss threshold as a fraction of total portfolio LGD.
+    k : int
+        Number of regions / counterparties.  The Finnish mortgage dataset
+        ships with K=17.  For ``k < 17`` we take the first ``k`` regions
+        (Uusimaa, Southwest Finland, Satakunta, Kanta-Häme, Pirkanmaa,
+        Päijät-Häme, Kymenlaakso, South Karelia, South Savo, North Savo).
+        For ``k > 17`` use the synthetic Gaussian helper instead.
+
+    Returns
+    -------
+    circuit, meta
+        ``circuit`` is the QSVT QuantumCircuit; ``meta`` includes the
+        AUX qubit index and the dataset-level scalars.
+    """
+
+    dataset = _load_finnish_mortgage_dataset(k=k)
+    return build_qsvt_circuit_from_dataset(
+        dataset=dataset,
+        degree=degree,
+        target_loss_fraction=target_loss_fraction,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -248,9 +374,12 @@ def classical_reference(
     """Compute the classical VaR/CVaR/tail-probability reference for the
     circuit's loss model.  ``tail_at_target_loss`` is the value the quantum
     circuit's tail estimate ``P(AUX=1)`` is benchmarked against.
+
+    The classical GCI sampler reads ``n_z`` and ``z_max`` from the
+    ``meta`` dict (now populated by ``build_qsvt_circuit_from_dataset``)
+    so it works for any dataset source.
     """
 
-    from Code import dataset_regions as ds
     from metrics.var_cvar import var_cvar
 
     losses = classical_gci_losses(
@@ -259,8 +388,8 @@ def classical_reference(
         f_values=meta["F_values"],
         lgd=meta["lgd"],
         n_scenarios=n_scenarios,
-        n_z=ds.n_z,
-        z_max=ds.z_max,
+        n_z=int(meta.get("n_z", 2)),
+        z_max=float(meta.get("z_max", 2.0)),
         seed=seed,
     )
 
@@ -558,13 +687,33 @@ def run_boston_qpu(
     token_file: str | None,
     use_pyzx: bool,
     k: int,
+    dataset_source: str = "finnish",
+    synthetic_seed: int = 0,
+    synthetic_n_z: int = 2,
 ) -> dict:
     t0 = time.time()
-    circuit, meta = build_finnish_mortgage_qsvt_circuit(
-        degree=degree,
-        target_loss_fraction=target_loss_fraction,
-        k=k,
-    )
+    if dataset_source == "finnish":
+        circuit, meta = build_finnish_mortgage_qsvt_circuit(
+            degree=degree,
+            target_loss_fraction=target_loss_fraction,
+            k=k,
+        )
+    elif dataset_source == "gaussian":
+        dataset = _synthetic_gaussian_dataset(
+            K=k,
+            n_z=synthetic_n_z,
+            z_max=2.0,
+            seed=synthetic_seed,
+        )
+        circuit, meta = build_qsvt_circuit_from_dataset(
+            dataset=dataset,
+            degree=degree,
+            target_loss_fraction=target_loss_fraction,
+        )
+    else:
+        raise ValueError(
+            f"dataset_source must be 'finnish' or 'gaussian'; got {dataset_source!r}"
+        )
 
     # Measure only the AUX qubit (the QSVT answer bit).
     aux_idx = int(meta["aux_qubit_index"])
@@ -683,17 +832,40 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--backend-name", default="ibm_boston")
     parser.add_argument(
+        "--dataset-source",
+        choices=["finnish", "gaussian"],
+        default="finnish",
+        help=(
+            "Source of the GCI portfolio.  'finnish' slices the first "
+            "--k regions of Code.dataset_regions (1 <= k <= 17).  "
+            "'gaussian' builds a synthetic K-region Gaussian factor copula "
+            "with --synthetic-seed / --synthetic-n-z; supports any K>=1."
+        ),
+    )
+    parser.add_argument(
         "--k",
         type=int,
         default=17,
         help=(
-            "Number of regions / counterparties in the portfolio.  The "
-            "Finnish mortgage dataset has K=17.  For K<17 we use the first "
-            "K regions of the dataset; for K>17 the run is rejected.  "
-            "K=10 is the codebase's default for non-Finland benchmarks "
-            "(see experiments/qsvt_sweep.py) and gives a ~2x shallower "
-            "Heron-routed circuit."
+            "Number of regions / counterparties in the portfolio.  "
+            "With --dataset-source finnish: must be in [1, 17] (the "
+            "Finnish mortgage dataset size).  With --dataset-source "
+            "gaussian: any K>=1.  K=10 is the codebase's default for "
+            "non-Finland benchmarks and gives a ~2x shallower Heron-"
+            "routed circuit than K=17."
         ),
+    )
+    parser.add_argument(
+        "--synthetic-seed",
+        type=int,
+        default=0,
+        help="Seed for the synthetic Gaussian dataset (only used with --dataset-source gaussian).",
+    )
+    parser.add_argument(
+        "--synthetic-n-z",
+        type=int,
+        default=2,
+        help="Number of latent Z factors for the synthetic Gaussian dataset (only used with --dataset-source gaussian).",
     )
     parser.add_argument(
         "--degree", type=int, default=8,
@@ -762,6 +934,9 @@ def main(argv: list[str] | None = None) -> int:
         token_file=token_file,
         use_pyzx=args.use_pyzx,
         k=args.k,
+        dataset_source=args.dataset_source,
+        synthetic_seed=args.synthetic_seed,
+        synthetic_n_z=args.synthetic_n_z,
     )
 
     summary = {

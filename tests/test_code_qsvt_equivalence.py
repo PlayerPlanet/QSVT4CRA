@@ -261,3 +261,102 @@ def test_boston_qpu_k10_noiseless_aer_aid():
     assert (
         p_aer / max(tail_classical, 1e-12) < 100
     ), f"Aer={p_aer}, classical={tail_classical} too far apart"
+
+
+def test_load_finnish_mortgage_dataset_keys():
+    """The Finnish dataset loader returns a dict with all the keys that
+    ``build_qsvt_circuit_from_dataset`` and ``classical_reference``
+    consume.  We pin the keys here so future refactors don't silently
+    drop fields.
+    """
+    import experiments.boston_qpu as bq
+
+    ds = bq._load_finnish_mortgage_dataset(k=5)
+    expected_keys = {
+        "K", "regions", "lgd", "p_zeros", "rhos", "F_values", "n_z", "z_max", "source",
+    }
+    assert set(ds.keys()) == expected_keys
+    assert ds["K"] == 5
+    assert len(ds["regions"]) == 5
+    assert len(ds["lgd"]) == 5
+    assert len(ds["F_values"]) == 5
+    assert all(len(row) == ds["n_z"] for row in ds["F_values"])
+
+
+def test_synthetic_gaussian_dataset_any_k():
+    """The synthetic Gaussian helper accepts any K>=1 and is
+    self-consistent (lengths match, sources are documented).
+    """
+    import pytest
+    import experiments.boston_qpu as bq
+
+    # K>17 (which the Finnish dataset doesn't support)
+    ds25 = bq._synthetic_gaussian_dataset(K=25, n_z=2, seed=7)
+    assert ds25["K"] == 25
+    assert len(ds25["regions"]) == 25
+    assert len(ds25["lgd"]) == 25
+    assert len(ds25["p_zeros"]) == 25
+    assert len(ds25["rhos"]) == 25
+    assert len(ds25["F_values"]) == 25
+    assert all(len(row) == 2 for row in ds25["F_values"])
+    assert ds25["n_z"] == 2
+    assert "synthetic Gaussian factor copula" in ds25["source"]
+
+    # K=1
+    ds1 = bq._synthetic_gaussian_dataset(K=1, n_z=3, seed=0)
+    assert ds1["K"] == 1
+    assert len(ds1["F_values"]) == 1
+    assert len(ds1["F_values"][0]) == 3
+
+    # Invalid K
+    with pytest.raises(ValueError, match="K must be"):
+        bq._synthetic_gaussian_dataset(K=0, n_z=2)
+    with pytest.raises(ValueError, match="n_z must be"):
+        bq._synthetic_gaussian_dataset(K=4, n_z=0)
+
+
+def test_build_qsvt_circuit_from_dataset_synthetic():
+    """``build_qsvt_circuit_from_dataset`` works for any dataset dict,
+    including K=25 synthetic Gaussian data.  This is the path the
+    ``--dataset-source gaussian`` CLI flag uses.
+    """
+    import experiments.boston_qpu as bq
+
+    ds = bq._synthetic_gaussian_dataset(K=20, n_z=2, seed=3)
+    circuit, meta = bq.build_qsvt_circuit_from_dataset(
+        dataset=ds, degree=4, target_loss_fraction=0.5
+    )
+    # 4 z (n_z=2 + 2 sectors) + K state + 1 target + 1 aux  (n_z here is the
+    # 2 sectors of MultivariateGCI_Linear; the actual qubit count is
+    # n_z * n_sectors + K + 1 + 1, where n_sectors = len(F_values[0]) = 2).
+    expected_qubits = ds["n_z"] * len(ds["F_values"][0]) + ds["K"] + 1 + 1
+    assert circuit.num_qubits == expected_qubits
+    assert meta["K"] == 20
+    assert meta["n_z"] == 2
+    assert meta["z_max"] == 2.0
+    assert "synthetic" in meta["data_source"]
+    # Classical reference works for the synthetic dataset too
+    cl = bq.classical_reference(meta, n_scenarios=10_000, seed=0)
+    assert 0.0 <= cl["tail_at_target_loss"] <= 1.0
+
+
+def test_finnish_wrapper_matches_generic_for_same_k():
+    """The Finnish convenience wrapper and the generic builder should
+    produce numerically equivalent results when given the same data
+    (same K, same dataset, same phases).  We check via the statevector
+    of the uncompiled circuit.
+    """
+    from qiskit.quantum_info import Statevector
+    import experiments.boston_qpu as bq
+
+    # Wrapper path
+    circuit_w, _ = bq.build_finnish_mortgage_qsvt_circuit(degree=4, k=10)
+    # Generic path with the same Finnish K=10 data
+    ds = bq._load_finnish_mortgage_dataset(k=10)
+    circuit_g, _ = bq.build_qsvt_circuit_from_dataset(dataset=ds, degree=4)
+
+    sv_w = Statevector.from_instruction(circuit_w.decompose(reps=20))
+    sv_g = Statevector.from_instruction(circuit_g.decompose(reps=20))
+    np.testing.assert_allclose(
+        np.asarray(sv_w.data), np.asarray(sv_g.data), atol=1e-12, rtol=0
+    )
