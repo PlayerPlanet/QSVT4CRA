@@ -1,0 +1,153 @@
+{
+  "apply_mitigation": true,
+  "backend_name": "ibm_boston",
+  "benchmark": {
+    "abs_error": 0.038525000000000004,
+    "abs_error_raw": 0.039425,
+    "classical_value": 0.009075,
+    "metric": "P(loss > target_loss)",
+    "quantum_value": 0.0476,
+    "quantum_value_raw": 0.0485,
+    "rel_error": 4.245179063360882,
+    "rel_error_raw": 4.34435261707989
+  },
+  "cal_shots": 1024,
+  "classical": {
+    "cvar_0_95": 4990911756.33277,
+    "cvar_0_99": 8256999026.59008,
+    "cvar_0_999": 9813422083.4,
+    "max_loss": 9813422083.4,
+    "n_scenarios": 200000,
+    "tail_at_target_loss": 0.009075,
+    "tail_prob_0_95": 0.01776,
+    "tail_prob_0_99": 0.009075,
+    "tail_prob_0_999": 0.000125,
+    "var_0_95": 0.0,
+    "var_0_99": 1578160809.0,
+    "var_0_999": 8235261274.4
+  },
+  "compile_report": {
+    "backend_name": "ibm_boston",
+    "depth": 228,
+    "estimated_success_probability": 0.8708241115413585,
+    "gate_counts": {
+      "cz": 101,
+      "measure": 1,
+      "rz": 148,
+      "sx": 196,
+      "x": 18
+    },
+    "n_qubits": 156,
+    "notes": "",
+    "processor_type": "Heron 3",
+    "selected_physical_qubits": [
+      14,
+      15,
+      19,
+      35,
+      34,
+      33,
+      32,
+      31
+    ],
+    "two_qubit_depth_proxy": 101
+  },
+  "dataset": {
+    "F_values": [
+      [
+        0.041,
+        0.2972
+      ],
+      [
+        0.0079,
+        0.0675
+      ]
+    ],
+    "K": 2,
+    "aux_qubit_index": 7,
+    "data_source": "Code.dataset_regions (first 2 regions)",
+    "lgd": [
+      8235261274.4,
+      1578160809.0
+    ],
+    "n_z": 2,
+    "p_zeros": [
+      0.01582,
+      0.01516
+    ],
+    "phases": [
+      7.504535715757783e-17,
+      0.30498423596098645,
+      0.5098010567509051,
+      0.30498423596098645,
+      7.504535715757783e-17
+    ],
+    "regions": [
+      "Uusimaa",
+      "Southwest Finland"
+    ],
+    "rhos": [
+      0.09,
+      0.09
+    ],
+    "sum_lgd": 9813422083.4,
+    "target_loss": 4906711041.7,
+    "target_loss_fraction": 0.5,
+    "target_qubit_index": 6,
+    "z_max": 2.0
+  },
+  "degree": 4,
+  "job_id": "d8ic08pe8nrc73bi56tg",
+  "precompile": {
+    "count_ops": {
+      "P(X)": 1,
+      "QSVT": 1
+    },
+    "depth": 2,
+    "num_qubits": 8
+  },
+  "qpu_ci_95_p_loss_gt": [
+    0.04342679959283047,
+    0.05177320040716954
+  ],
+  "qpu_counts_mitigated": {
+    "0": 9524,
+    "1": 476,
+    "_condition_number": 1.0019569471624263,
+    "_mitigated": true
+  },
+  "qpu_counts_raw": {
+    "0": 9515,
+    "1": 485
+  },
+  "qpu_p_loss_gt_target": 0.0476,
+  "qpu_p_loss_gt_target_raw": 0.0485,
+  "qpu_total_shots": 10000,
+  "readout_calibration": {
+    "applied": true,
+    "c0_counts": {
+      "0": 1023,
+      "1": 1
+    },
+    "c1_counts": {
+      "0": 1,
+      "1": 1023
+    },
+    "cal_physical_qubit": 31,
+    "cal_shots": 1024,
+    "confusion_matrix": [
+      [
+        0.9990234375,
+        0.0009765625
+      ],
+      [
+        0.0009765625,
+        0.9990234375
+      ]
+    ],
+    "e01_meas0_given_state1": 0.0009765625,
+    "e10_meas1_given_state0": 0.0009765625
+  },
+  "runtime_seconds": 42.444597005844116,
+  "shots": 10000
+}
