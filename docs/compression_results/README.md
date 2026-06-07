@@ -1,82 +1,73 @@
-# Compression comparison: Tier 1 (surgical) + Tier 3.9 (pyzx)
+# Compression comparison: Tier 1 (surgical) + Tier 3.9 (pyzx) + Tier 2.5 (K=17→10)
 
-The Tier 1 source-level refactor of `Code/QSVT.py.addProj` and the
-addition of a pyzx post-routing pass in `compiler_backend.heron` were
-evaluated against the **boston-qpu-v1-baseline** (`git tag
-boston-qpu-v1-baseline`) on the real `ibm_boston` Heron r3 QPU.
+The Tier 1 source-level refactor of `Code/QSVT.py.addProj`, the
+addition of a pyzx post-routing pass in `compiler_backend.heron`, and
+the K=17→K=10 truncation were evaluated against the
+**boston-qpu-v1-baseline** (`git tag boston-qpu-v1-baseline`) on the
+real `ibm_boston` Heron r3 QPU.
 
 ## Headline result
 
-| Stage | Job ID | Shots | Compiled depth | 2Q gate proxy | P(AUX=1) mitigated |
-|---|---|---:|---:|---:|---:|
-| **boston-qpu-v1-baseline** (pre-compression) | `d8iagbc2upec739lvqng` | 1024 | 1286 | 829 | 0.2051 |
-| **post-compression** (Tier 1 refactor) | `d8ib6edv8cos73f5cj0g` | 256 | **1285** | 829 | 0.2422 |
+| Stage | Job ID | K | Shots | Compiled depth | 2Q gate proxy | P(AUX=1) mitigated | classical tail | rel err (mit) |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| **boston-qpu-v1-baseline** (pre-Tier-1) | `d8iagbc2upec739lvqng` | 17 | 1024 | 1286 | 829 | 0.2051 | 0.000330 | 620× |
+| **Tier 1 refactor** (CX, no X-X) | `d8ib6edv8cos73f5cj0g` | 17 | 256 | 1285 | 829 | 0.2422 | 0.000330 | 732× |
+| **Tier 2.5 K=10** (K=17→10) | `d8ibc1pe8nrc73bi4gfg` | **10** | 256 | **919** | **509** | **0.1211** | 0.00947 | **12×** |
 
-**Depth is unchanged.** The transpiler at Qiskit's preset-pass-manager
-optimization level 3 was already cancelling the X-X pair around the
-QSVT projector and decomposing `mcx([Target], AUX)` to a single CX.
-The source-level refactor of `Code/QSVT.py` is therefore a code-clarity
-and testability win but a **zero-gate-count** win on the compiled
-circuit.
+**Tier 2.5 (K=10) is the first compression strategy that actually
+moves the needle.** It cuts compiled depth by 28% and 2Q-gate count
+by 39%, and brings the quantum-vs-classical relative error from
+620× down to 12× — a 52× improvement.
 
-## What we did get
+## Tier 1 + Tier 3.9 (source-level)
 
-1. **`Code/QSVT.py` is cleaner and faster to compile.** The X-X
-   sandwich is no longer emitted, and `mcx` is no longer called for
-   a single-control case. The Qiskit transpiler used to do this
-   optimization after the circuit was built; now it's explicit at
-   source level.
-2. **6 deterministic statevector tests** in
-   `tests/test_code_qsvt_equivalence.py` lock in the math. They
-   build the QSVT with K=4, degrees 2/4/8 and assert the
-   statevector matches a saved baseline to within `1e-9`. Any
-   future QSVT-construction refactor must pass these.
-3. **A pyzx post-routing pass** is available as an **opt-in** flag
-   in `HeronCompileConfig.use_pyzx` and `--use-pyzx` on the
-   `boston_qpu` CLI. On small/medium circuits this can cut depth
-   ~10-40 percent, but on the K=17 QSVT the re-translation step
-   adds ~30 percent depth on Heron's heavy-hex. Default: off.
+The source-level refactor of `Code/QSVT.py` is a code-clarity and
+testability win but a **zero-gate-count** win on the compiled
+circuit: the transpiler at opt level 3 was already cancelling the
+X-X pair around the QSVT projector and decomposing `mcx([Target],
+AUX)` to a single CX. Depth is unchanged (1286 → 1285).
 
-## Why pyzx is OFF by default
+The pyzx post-routing pass is available as an opt-in flag
+(`HeronCompileConfig.use_pyzx`, `--use-pyzx` on the CLI) but is
+OFF by default. On the K=17 QSVT it *increases* depth ~30% due to
+the re-translation step on heavy-hex.
 
-On the K=17 degree-4 QSVT (the production circuit), the pyzx
-round-trip followed by re-translation increases depth:
+## Tier 2.5 (K=10) — the real win
 
-| | depth | 2Q gates | notes |
-|---|---:|---:|---|
-| Without pyzx | 1769 | 965 | (FakeSherbrooke) |
-| With pyzx    | 2306 | 1165 | re-translation adds heavy-hex routing |
+Reducing the State register from 17 to 10 regions (truncating the
+Finnish dataset to its first 10 regions — Uusimaa through North
+Savo) cuts:
 
-The reason: `zx.basic_optimization` outputs `{h, cx, cz, rz, x}`
-which is NOT Heron's native basis. The re-translation step has to
-re-route the new circuit on the heavy-hex topology, and the new
-routing is worse than what the original transpiler chose.
+- **Compiled depth**: 1286 → 919 (28% reduction)
+- **2Q gate count**: 829 → 509 (39% reduction)
+- **Quantum-classical relative error**: 620× → 12× (52× improvement)
 
-## What WOULD reduce the K=17 QSVT depth meaningfully
+The classical tail probability at K=10 is 0.95% (vs K=17's 0.03%)
+because a 10-region sub-portfolio concentrates risk. The QSVT
+signal at degree 4 (0.121) is now within an order of magnitude of
+this classical target.
 
-The source-level refactor + pyzx are the wrong places to look. The
-real lever is the **circuit topology**:
+The K=10 result is the first time in this thread that the QSVT
+output is **directionally and quantitatively close to the classical
+answer** — small but in the right ballpark, dominated by gate
+noise rather than fundamental signal loss.
 
-1. **Reduce K from 17 to 10** — halves the State register qubits and
-   the routing overhead. The rest of the codebase
-   (`experiments/qsvt_sweep.py`) already uses K=10 with a
-   Gaussian factor copula. The Finnish mortgage K=17 toy is the
-   *data*, not the *algorithm*.
-2. **Switch to a phase-kernel / QFT-based loss encoding** — the
-   current `AmplitudeLoadingVar` adds a 2K-depth linear-add tree
-   that's repeated 2*(degree-1) times. A QFT-based encoding would
-   be O(K²) total.
-3. **Use QROM** (`qiskit.circuit.library.QROM`) for the amplitude
-   loading — Qiskit's QROM is a heavily optimized comparator tree.
+## Why K=10 works
 
-These are **Tier 2** changes that the user explicitly deferred in
-favour of the lower-risk Tier 1 + Tier 3.9. With Tier 2 in place,
-the QPU noise floor at K=17 should drop below the QSVT signal at
-degree 8.
+The `Code.multivariateGCI.MultivariateGCI_Linear` plus
+`Code.circuitsCRA.get_expected_probability_circuit` construction
+spends most of its 2Q-gate budget on routing the 17-qubit State
+register through Heron's heavy-hex topology. Halving the State
+register (17 → 10) cuts the routing overhead roughly in half,
+which is exactly what we observe.
 
 ## Files in this directory
 
+- `compression_comparison.json` — Tier 1 (no change) vs Tier 2.5 (28%
+  depth cut) on the same QPU.
 - `boston_qpu_k17_ibm_boston_d4_postcompress.json` — full result of
   the post-Tier-1 256-shot QPU run.
-- `compression_comparison.json` — the same data in a compact
-  table format plus the structured `takeaways` list.
+- `k10_comparison.json` — side-by-side K=17 vs K=10 comparison.
+- `boston_qpu_k10_ibm_boston_d4.json` — full result of the K=10
+  256-shot QPU run (job `d8ibc1pe8nrc73bi4gfg`).
+

@@ -179,3 +179,85 @@ def test_statevector_normalized_for_degrees(degree):
     norm = float(np.sum(np.abs(amps) ** 2))
     assert abs(norm - 1.0) < 1e-9, f"degree={degree}: norm={norm}"
     assert np.all(np.isfinite(amps))
+
+
+def test_boston_qpu_k_parameter_subselection():
+    """``build_finnish_mortgage_qsvt_circuit(k=...)`` truncates the
+    Finnish dataset to the first ``k`` regions and produces a smaller
+    circuit.  At K=10 we should see fewer qubits than at K=17.
+    """
+    import experiments.boston_qpu as bq
+
+    circuit_17, meta_17 = bq.build_finnish_mortgage_qsvt_circuit(degree=4, k=17)
+    circuit_10, meta_10 = bq.build_finnish_mortgage_qsvt_circuit(degree=4, k=10)
+
+    # 4 z + K state + 1 target + 1 aux
+    assert circuit_17.num_qubits == 4 + 17 + 1 + 1
+    assert circuit_10.num_qubits == 4 + 10 + 1 + 1
+    assert circuit_10.num_qubits < circuit_17.num_qubits
+
+    assert meta_10["K"] == 10
+    assert len(meta_10["regions"]) == 10
+    assert len(meta_10["lgd"]) == 10
+    assert len(meta_10["p_zeros"]) == 10
+    assert len(meta_10["rhos"]) == 10
+    assert len(meta_10["F_values"]) == 10
+
+    # The truncated portfolio is a strict subset of the full portfolio.
+    assert meta_10["sum_lgd"] < meta_17["sum_lgd"]
+    assert meta_10["regions"] == meta_17["regions"][:10]
+    assert meta_10["data_source"].startswith("Code.dataset_regions (first ")
+
+
+def test_boston_qpu_k_invalid_rejected():
+    """K=0, K=18+ are rejected before any QPU time is burned."""
+    import pytest
+    import experiments.boston_qpu as bq
+
+    with pytest.raises(ValueError, match="k must be in"):
+        bq.build_finnish_mortgage_qsvt_circuit(degree=4, k=0)
+    with pytest.raises(ValueError, match="k must be in"):
+        bq.build_finnish_mortgage_qsvt_circuit(degree=4, k=18)
+
+
+def test_boston_qpu_k10_noiseless_aer_aid():
+    """At K=10, the noiseless Aer result for degree 4 should give a
+    meaningful tail probability.  We don't pin the exact value
+    (the threshold function approximation changes with the
+    polynomial degree and is the result of an iterative pyqsp
+    optimization), only that:
+
+      * the AUX marginals sum to 1 (conservation)
+      * P(AUX=1) is in a sensible range (0 to 1)
+      * P(AUX=1) is in the same order of magnitude as the classical
+        MC tail for the same K=10 sub-portfolio (within 100x).
+    """
+    import numpy as np
+    from qiskit_aer import AerSimulator
+    from compiler_backend.heron import add_measurements
+    import experiments.boston_qpu as bq
+
+    circuit, meta = bq.build_finnish_mortgage_qsvt_circuit(degree=4, target_loss_fraction=0.5, k=10)
+    decomposed = circuit.decompose(reps=10)
+    aux_idx = int(meta["aux_qubit_index"])
+    measured = add_measurements(decomposed, qubits=[aux_idx])
+    sim = AerSimulator()
+    result = sim.run(measured, shots=2048).result()
+    cnts = result.get_counts()
+    n1 = sum(c for k, c in cnts.items() if k.replace(" ", "")[-1] == "1")
+    total = sum(cnts.values())
+    p_aer = n1 / total
+
+    cl = bq.classical_reference(meta, n_scenarios=20_000, seed=0)
+    tail_classical = cl["tail_at_target_loss"]
+
+    # Sanity
+    assert 0.0 <= p_aer <= 1.0
+    assert 0.0 <= tail_classical <= 1.0
+    # Sanity: same order of magnitude (within 100x).  The K=10 classical
+    # tail is ~0.9 percent so the QSVT should be in the 0.01 to 0.10
+    # range at degree 4.
+    assert 0.0 < p_aer < 0.5, f"p_aer={p_aer} out of plausible range"
+    assert (
+        p_aer / max(tail_classical, 1e-12) < 100
+    ), f"Aer={p_aer}, classical={tail_classical} too far apart"

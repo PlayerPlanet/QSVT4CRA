@@ -77,12 +77,31 @@ from compiler_backend.heron import (
 def build_finnish_mortgage_qsvt_circuit(
     degree: int = 4,
     target_loss_fraction: float = 0.5,
+    k: int = 17,
 ):
-    """Build the K=17 Finnish mortgage expected-probability circuit with
-    real Chebyshev threshold phases.
+    """Build the Finnish mortgage expected-probability circuit with real
+    Chebyshev threshold phases.
 
-    Returns ``(circuit, meta)`` where ``meta`` includes the **AUX qubit
-    index** (the QSVT projector answer bit) and the dataset-level scalars.
+    Parameters
+    ----------
+    degree : int
+        QSVT polynomial degree.  ``max(2, degree)`` phases are produced.
+    target_loss_fraction : float
+        Loss threshold as a fraction of total portfolio LGD.
+    k : int
+        Number of regions / counterparties.  The Finnish mortgage dataset
+        (``Code.dataset_regions``) ships with K=17.  For ``k < 17`` we
+        take the first ``k`` regions of that dataset (Uusimaa, Southwest
+        Finland, Satakunta, Kanta-Häme, Pirkanmaa, Päijät-Häme,
+        Kymenlaakso, South Karelia, South Savo, North Savo) so the
+        benchmark retains data provenance.  For ``k > 17`` we raise.
+
+    Returns
+    -------
+    circuit, meta
+        ``circuit`` is the QSVT QuantumCircuit; ``meta`` includes the
+        AUX qubit index (the QSVT projector answer bit) and the
+        dataset-level scalars.
     """
 
     from Code import dataset_regions as ds
@@ -90,14 +109,35 @@ def build_finnish_mortgage_qsvt_circuit(
     from Code.multivariateGCI import MultivariateGCI_Linear
     from qsvt.approximator import approximate_threshold
 
+    if k < 1 or k > ds.K:
+        raise ValueError(
+            f"k must be in [1, {ds.K}] (the Finnish dataset has {ds.K} regions); got k={k}"
+        )
+
+    # Truncate the dataset to the first k regions.  This preserves
+    # data provenance: K=10 is a sub-portfolio of the K=17 mortgage
+    # portfolio, not a synthetic Gaussian copula replacement.
+    if k == ds.K:
+        regions = list(ds.regions)
+        lgd = list(map(float, ds.lgd))
+        p_zeros = list(map(float, ds.p_zeros))
+        rhos = list(map(float, ds.rhos))
+        f_values = [list(map(float, row)) for row in ds.F_values]
+    else:
+        regions = list(ds.regions)[:k]
+        lgd = list(map(float, ds.lgd))[:k]
+        p_zeros = list(map(float, ds.p_zeros))[:k]
+        rhos = list(map(float, ds.rhos))[:k]
+        f_values = [list(map(float, row)) for row in ds.F_values[:k]]
+
     uncertainty_model = MultivariateGCI_Linear(
         n_normal=ds.n_z,
         normal_max_value=ds.z_max,
-        p_zeros=ds.p_zeros,
-        rhos=ds.rhos,
-        F_list=ds.F_values,
+        p_zeros=p_zeros,
+        rhos=rhos,
+        F_list=f_values,
     )
-    max_loss = float(np.sum(ds.lgd))
+    max_loss = float(np.sum(lgd))
     target_loss = target_loss_fraction * max_loss
 
     # Real Chebyshev-QSP phases for the even threshold function with the same
@@ -111,9 +151,9 @@ def build_finnish_mortgage_qsvt_circuit(
     )
 
     circuit, _objective, ok = get_expected_probability_circuit(
-        K=ds.K,
+        K=k,
         uncertainity_model=uncertainty_model,
-        lgd=list(ds.lgd),
+        lgd=lgd,
         target_loss=target_loss,
         phases=phases,
         threshold=0.5,
@@ -127,18 +167,21 @@ def build_finnish_mortgage_qsvt_circuit(
     aux_qubit_index = circuit.num_qubits - 1
     target_qubit_index = circuit.num_qubits - 2
     meta = {
-        "K": ds.K,
-        "regions": list(ds.regions),
+        "K": k,
+        "regions": regions,
         "sum_lgd": max_loss,
         "target_loss": target_loss,
         "target_loss_fraction": target_loss_fraction,
         "target_qubit_index": target_qubit_index,
         "aux_qubit_index": aux_qubit_index,
         "phases": [float(p) for p in phases],
-        "lgd": list(map(float, ds.lgd)),
-        "p_zeros": list(map(float, ds.p_zeros)),
-        "rhos": list(map(float, ds.rhos)),
-        "F_values": [list(map(float, row)) for row in ds.F_values],
+        "lgd": lgd,
+        "p_zeros": p_zeros,
+        "rhos": rhos,
+        "F_values": f_values,
+        "data_source": "Code.dataset_regions (first k regions)"
+        if k < ds.K
+        else "Code.dataset_regions (full)",
     }
     return circuit, meta
 
@@ -514,11 +557,13 @@ def run_boston_qpu(
     cal_shots: int,
     token_file: str | None,
     use_pyzx: bool,
+    k: int,
 ) -> dict:
     t0 = time.time()
     circuit, meta = build_finnish_mortgage_qsvt_circuit(
         degree=degree,
         target_loss_fraction=target_loss_fraction,
+        k=k,
     )
 
     # Measure only the AUX qubit (the QSVT answer bit).
@@ -638,6 +683,19 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--backend-name", default="ibm_boston")
     parser.add_argument(
+        "--k",
+        type=int,
+        default=17,
+        help=(
+            "Number of regions / counterparties in the portfolio.  The "
+            "Finnish mortgage dataset has K=17.  For K<17 we use the first "
+            "K regions of the dataset; for K>17 the run is rejected.  "
+            "K=10 is the codebase's default for non-Finland benchmarks "
+            "(see experiments/qsvt_sweep.py) and gives a ~2x shallower "
+            "Heron-routed circuit."
+        ),
+    )
+    parser.add_argument(
         "--degree", type=int, default=8,
         help="QSVT polynomial degree. 8 is the sweet spot before noise dominates on Heron.",
     )
@@ -703,6 +761,7 @@ def main(argv: list[str] | None = None) -> int:
         cal_shots=args.cal_shots,
         token_file=token_file,
         use_pyzx=args.use_pyzx,
+        k=args.k,
     )
 
     summary = {
