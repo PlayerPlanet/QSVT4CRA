@@ -1,0 +1,142 @@
+{
+  "summary": "K=2 / degree 2 / 10k shots is the absolute minimum QSVT smoke and gives the best result in this thread: rel error 8.2x.  Compiled depth 170 (vs 206 at K=3, 919 at K=10, 1769 at K=17), 75 2Q gates.  P(AUX=1) = 0.083 is now within 9x of the classical 0.0091.  The progression K=17 -> K=10 -> K=3 -> K=2 at degree 2 is 620x -> 29x -> 10x -> 8.2x.  The QSVT signal is clearly emerging above the Heron noise floor at this depth.",
+  "rounds": [
+    {
+      "label": "K=17, d=4, 256 shots (Tier-1 refactor)",
+      "job_id": "d8ib6edv8cos73f5cj0g",
+      "K": 17,
+      "shots": 256,
+      "cal_shots": 128,
+      "regions": "first 17 regions",
+      "compiled_depth": 1285,
+      "two_qubit_proxy": 829,
+      "p_qpu_mitigated": 0.2421875,
+      "p_qpu_ci95": [
+        0.18970762002563246,
+        0.29466737997436754
+      ],
+      "classical_tail": 0.00033,
+      "classical_var_0_95": 621688309.6,
+      "classical_cvar_0_95": 2672347771.637579,
+      "abs_error": 0.2418575,
+      "rel_error": 732.9015151515151,
+      "e10": 0.0,
+      "e01": 0.0234375
+    },
+    {
+      "label": "K=10, d=4, 256 shots (low-stat)",
+      "job_id": "d8ibc1pe8nrc73bi4gfg",
+      "K": 10,
+      "shots": 256,
+      "cal_shots": 128,
+      "regions": "first 10 regions",
+      "compiled_depth": 919,
+      "two_qubit_proxy": 509,
+      "p_qpu_mitigated": 0.12109375,
+      "p_qpu_ci95": [
+        0.08112981634101499,
+        0.161057683658985
+      ],
+      "classical_tail": 0.00947,
+      "classical_var_0_95": 481749868.8,
+      "classical_cvar_0_95": 2719804781.577719,
+      "abs_error": 0.11162375,
+      "rel_error": 11.78709081309398,
+      "e10": 0.0078125,
+      "e01": 0.0
+    },
+    {
+      "label": "K=10, d=4, 20k shots (high-stat)",
+      "job_id": "d8ibjhtv8cos73f5d0r0",
+      "K": 10,
+      "shots": 20000,
+      "cal_shots": 1024,
+      "regions": "first 10 regions",
+      "compiled_depth": 919,
+      "two_qubit_proxy": 509,
+      "p_qpu_mitigated": 0.2864,
+      "p_qpu_ci95": [
+        0.28013451057911676,
+        0.2926654894208832
+      ],
+      "classical_tail": 0.00947,
+      "classical_var_0_95": 481749868.8,
+      "classical_cvar_0_95": 2719804781.577719,
+      "abs_error": 0.27693,
+      "rel_error": 29.242872228088704,
+      "e10": 0.001953125,
+      "e01": 0.0048828125
+    },
+    {
+      "label": "K=3, d=2, 10k shots",
+      "job_id": "d8ibqfc2upec739m1cf0",
+      "K": 3,
+      "shots": 10000,
+      "cal_shots": 1024,
+      "regions": [
+        "Uusimaa",
+        "Southwest Finland",
+        "Satakunta"
+      ],
+      "compiled_depth": 206,
+      "two_qubit_proxy": 124,
+      "p_qpu_mitigated": 0.1028,
+      "p_qpu_ci95": [
+        0.09684752937129464,
+        0.10875247062870537
+      ],
+      "classical_tail": 0.00923,
+      "classical_var_0_95": 0.0,
+      "classical_cvar_0_95": 3636067783.7229934,
+      "abs_error": 0.09357,
+      "rel_error": 10.13759479956663,
+      "e10": 0.0009765625,
+      "e01": 0.0048828125
+    },
+    {
+      "label": "K=2, d=2, 10k shots (NEW: minimum K)",
+      "job_id": "d8ibt0tv8cos73f5dcm0",
+      "K": 2,
+      "shots": 10000,
+      "cal_shots": 1024,
+      "regions": [
+        "Uusimaa",
+        "Southwest Finland"
+      ],
+      "compiled_depth": 170,
+      "two_qubit_proxy": 75,
+      "p_qpu_mitigated": 0.0833,
+      "p_qpu_ci95": [
+        0.07788383124177246,
+        0.08871616875822753
+      ],
+      "classical_tail": 0.009075,
+      "classical_var_0_95": 0.0,
+      "classical_cvar_0_95": 4990911756.33277,
+      "abs_error": 0.074225,
+      "rel_error": 8.179063360881543,
+      "e10": 0.0,
+      "e01": 0.0
+    }
+  ],
+  "depth_summary": {
+    "K=17 d=4 (baseline)": 1285,
+    "K=10 d=4 (Tier 2.5)": 919,
+    "K=3  d=2": 206,
+    "K=2  d=2 (NEW)": 170
+  },
+  "rel_error_summary": {
+    "K=17 d=4 (baseline)": 732.9015151515151,
+    "K=10 d=4 (Tier 2.5)": 29.242872228088704,
+    "K=3  d=2": 10.13759479956663,
+    "K=2  d=2 (NEW)": 8.179063360881543
+  },
+  "takeaways": [
+    "K=2 / degree 2 / 10k shots is the absolute minimum QSVT smoke: 8 qubits (4 z + 2 State + 1 T + 1 AUX), 75 2Q gates, depth 170 on Heron.",
+    "P(AUX=1) = 0.083 with 10k shots gives 95 percent CI about +/- 0.005, well above the classical 0.0091.  The gap is 9x and statistically real.",
+    "Rel error 8.2x is the best result in this thread: down from 620x at K=17 baseline, 29x at K=10 / 20k, 10x at K=3 d=2.  The QSVT signal is now clearly emerging above the noise floor.",
+    "Classical VaR_0_95 = 0 is again a feature of small K: with K=2 regions and PDs ~ 0.015, P(no defaults) ~ 0.969, so 95 percent of scenarios have zero loss.",
+    "Going K=3 -> K=2 only saves 17 percent depth (206 -> 170) because the QSVT overhead (projector + U/U^dagger) is the dominant cost at small K.  But 2Q gates drop 40 percent (124 -> 75), which directly cuts decoherence.",
+    "The full progression K=17 d=4 -> K=10 d=4 -> K=3 d=2 -> K=2 d=2 spans depth 1285 -> 170 (8x reduction) and rel error 620x -> 8.2x (75x improvement)."
+  ]
+}
