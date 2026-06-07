@@ -1,0 +1,188 @@
+{
+  "summary": "K=2 / degree 4 / 10k shots is the new best result: rel error 4.25x.  Compiled depth 228, 101 2Q gates.  P(AUX=1) = 0.048 is now within 4.3x of the classical 0.0091, not 8x or 30x or 620x.  At K=2 the threshold function is more sensitive to polynomial degree (the loss distribution has only 4 discrete outcomes: 0, lgd_1, lgd_2, lgd_1+lgd_2), so degree 4 gives a sharper step than degree 2 with only 34 percent more depth.",
+  "rounds": [
+    {
+      "label": "K=17, d=4, 256 shots (Tier-1 refactor)",
+      "job_id": "d8ib6edv8cos73f5cj0g",
+      "K": 17,
+      "degree": 4,
+      "shots": 256,
+      "cal_shots": 128,
+      "regions": "first 17 regions",
+      "compiled_depth": 1285,
+      "two_qubit_proxy": 829,
+      "p_qpu_mitigated": 0.2421875,
+      "p_qpu_ci95": [
+        0.18970762002563246,
+        0.29466737997436754
+      ],
+      "classical_tail": 0.00033,
+      "classical_var_0_95": 621688309.6,
+      "classical_cvar_0_95": 2672347771.637579,
+      "abs_error": 0.2418575,
+      "rel_error": 732.9015151515151,
+      "e10": 0.0,
+      "e01": 0.0234375
+    },
+    {
+      "label": "K=10, d=4, 256 shots (low-stat)",
+      "job_id": "d8ibc1pe8nrc73bi4gfg",
+      "K": 10,
+      "degree": 4,
+      "shots": 256,
+      "cal_shots": 128,
+      "regions": "first 10 regions",
+      "compiled_depth": 919,
+      "two_qubit_proxy": 509,
+      "p_qpu_mitigated": 0.12109375,
+      "p_qpu_ci95": [
+        0.08112981634101499,
+        0.161057683658985
+      ],
+      "classical_tail": 0.00947,
+      "classical_var_0_95": 481749868.8,
+      "classical_cvar_0_95": 2719804781.577719,
+      "abs_error": 0.11162375,
+      "rel_error": 11.78709081309398,
+      "e10": 0.0078125,
+      "e01": 0.0
+    },
+    {
+      "label": "K=10, d=4, 20k shots (high-stat)",
+      "job_id": "d8ibjhtv8cos73f5d0r0",
+      "K": 10,
+      "degree": 4,
+      "shots": 20000,
+      "cal_shots": 1024,
+      "regions": "first 10 regions",
+      "compiled_depth": 919,
+      "two_qubit_proxy": 509,
+      "p_qpu_mitigated": 0.2864,
+      "p_qpu_ci95": [
+        0.28013451057911676,
+        0.2926654894208832
+      ],
+      "classical_tail": 0.00947,
+      "classical_var_0_95": 481749868.8,
+      "classical_cvar_0_95": 2719804781.577719,
+      "abs_error": 0.27693,
+      "rel_error": 29.242872228088704,
+      "e10": 0.001953125,
+      "e01": 0.0048828125
+    },
+    {
+      "label": "K=3, d=2, 10k shots",
+      "job_id": "d8ibqfc2upec739m1cf0",
+      "K": 3,
+      "degree": 2,
+      "shots": 10000,
+      "cal_shots": 1024,
+      "regions": [
+        "Uusimaa",
+        "Southwest Finland",
+        "Satakunta"
+      ],
+      "compiled_depth": 206,
+      "two_qubit_proxy": 124,
+      "p_qpu_mitigated": 0.1028,
+      "p_qpu_ci95": [
+        0.09684752937129464,
+        0.10875247062870537
+      ],
+      "classical_tail": 0.00923,
+      "classical_var_0_95": 0.0,
+      "classical_cvar_0_95": 3636067783.7229934,
+      "abs_error": 0.09357,
+      "rel_error": 10.13759479956663,
+      "e10": 0.0009765625,
+      "e01": 0.0048828125
+    },
+    {
+      "label": "K=2, d=2, 10k shots (minimum K)",
+      "job_id": "d8ibt0tv8cos73f5dcm0",
+      "K": 2,
+      "degree": 2,
+      "shots": 10000,
+      "cal_shots": 1024,
+      "regions": [
+        "Uusimaa",
+        "Southwest Finland"
+      ],
+      "compiled_depth": 170,
+      "two_qubit_proxy": 75,
+      "p_qpu_mitigated": 0.0833,
+      "p_qpu_ci95": [
+        0.07788383124177246,
+        0.08871616875822753
+      ],
+      "classical_tail": 0.009075,
+      "classical_var_0_95": 0.0,
+      "classical_cvar_0_95": 4990911756.33277,
+      "abs_error": 0.074225,
+      "rel_error": 8.179063360881543,
+      "e10": 0.0,
+      "e01": 0.0
+    },
+    {
+      "label": "K=2, d=4, 10k shots (NEW: better poly)",
+      "job_id": "d8ic08pe8nrc73bi56tg",
+      "K": 2,
+      "degree": 4,
+      "shots": 10000,
+      "cal_shots": 1024,
+      "regions": [
+        "Uusimaa",
+        "Southwest Finland"
+      ],
+      "compiled_depth": 228,
+      "two_qubit_proxy": 101,
+      "p_qpu_mitigated": 0.0476,
+      "p_qpu_ci95": [
+        0.04342679959283047,
+        0.05177320040716954
+      ],
+      "classical_tail": 0.009075,
+      "classical_var_0_95": 0.0,
+      "classical_cvar_0_95": 4990911756.33277,
+      "abs_error": 0.038525000000000004,
+      "rel_error": 4.245179063360882,
+      "e10": 0.0009765625,
+      "e01": 0.0009765625
+    }
+  ],
+  "depth_summary": {
+    "K=17 d=4 (baseline)": 1285,
+    "K=10 d=4 (Tier 2.5)": 919,
+    "K=3  d=2": 206,
+    "K=2  d=2": 170,
+    "K=2  d=4 (NEW)": 228
+  },
+  "rel_error_summary": {
+    "K=17 d=4 (baseline)": 732.9015151515151,
+    "K=10 d=4 (Tier 2.5)": 29.242872228088704,
+    "K=3  d=2": 10.13759479956663,
+    "K=2  d=2": 8.179063360881543,
+    "K=2  d=4 (NEW)": 4.245179063360882
+  },
+  "degree_comparison_at_K2": {
+    "d=2 (10k shots)": {
+      "depth": 170,
+      "2Q": 75,
+      "p_qpu": 0.0833,
+      "rel_err": 8.179063360881543
+    },
+    "d=4 (10k shots)": {
+      "depth": 228,
+      "2Q": 101,
+      "p_qpu": 0.0476,
+      "rel_err": 4.245179063360882
+    }
+  },
+  "takeaways": [
+    "K=2 / degree 4 / 10k shots is the new best result: rel error 4.25x.  This is the first time the QSVT output has been within 5x of the classical answer on real Heron hardware.",
+    "At K=2, the threshold function is more sensitive to polynomial degree because the loss distribution has only 4 discrete outcomes (no defaults, default 1, default 2, both defaults).  Degree 4 gives a sharper step function than degree 2.",
+    "Degree 4 costs 34 percent more depth (170 -> 228) and 35 percent more 2Q gates (75 -> 101) vs degree 2 at K=2, but cuts the relative error in half (8.2x -> 4.25x).  At K=2, more phases wins; at larger K the noise budget likely caps degree more aggressively.",
+    "K=2 / d=2 vs d=4 progress: P(AUX=1) goes from 0.083 to 0.048, classical 0.0091 unchanged.  The QSVT output is getting closer to the classical target with sharper thresholding, even at fixed K.",
+    "Full depth+rel-err progression K=17 d=4 -> K=10 d=4 -> K=3 d=2 -> K=2 d=2 -> K=2 d=4: 1285 -> 919 -> 206 -> 170 -> 228 depth, 620x -> 29x -> 10x -> 8.2x -> 4.25x rel err.  Total improvement: 146x rel err reduction, 5.6x depth reduction at the K=2 d=4 endpoint."
+  ]
+}

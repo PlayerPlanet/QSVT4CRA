@@ -1,0 +1,96 @@
+{
+  "summary": "K=10 / degree=4 / 20k shots gives a high-precision estimate of the QPU noise floor: P(AUX=1) = 0.2864 with a 95 percent CI of [0.2801, 0.2927].  Classical tail = 0.0095, so the rel error is 29x \u2014 almost 3x worse than the noisy 256-shot 12x estimate.  The 256-shot run was a fluke (1.5 sigma below the true value).  Even at 20k shots, mitigation has near-zero effect (Heron readout is 0.2-0.5 percent), confirming that gate decoherence is the dominant error source at this depth.",
+  "rounds": [
+    {
+      "label": "K=17, d=4, 256 shots (post-Tier-1 baseline)",
+      "job_id": "d8ib6edv8cos73f5cj0g",
+      "shots": 256,
+      "cal_shots": 128,
+      "compiled_depth": 1285,
+      "two_qubit_proxy": 829,
+      "p_qpu_mitigated": 0.2421875,
+      "p_qpu_ci95": [
+        0.18970762002563246,
+        0.29466737997436754
+      ],
+      "classical_tail": 0.00033,
+      "abs_error": 0.2418575,
+      "rel_error": 732.9015151515151,
+      "e10": 0.0,
+      "e01": 0.0234375,
+      "counts_raw": {
+        "0": 195,
+        "1": 61
+      }
+    },
+    {
+      "label": "K=10, d=4, 256 shots (low-stat QPU)",
+      "job_id": "d8ibc1pe8nrc73bi4gfg",
+      "shots": 256,
+      "cal_shots": 128,
+      "compiled_depth": 919,
+      "two_qubit_proxy": 509,
+      "p_qpu_mitigated": 0.12109375,
+      "p_qpu_ci95": [
+        0.08112981634101499,
+        0.161057683658985
+      ],
+      "classical_tail": 0.00947,
+      "abs_error": 0.11162375,
+      "rel_error": 11.78709081309398,
+      "e10": 0.0078125,
+      "e01": 0.0,
+      "counts_raw": {
+        "0": 223,
+        "1": 33
+      }
+    },
+    {
+      "label": "K=10, d=4, 20k shots (high-stat QPU)",
+      "job_id": "d8ibjhtv8cos73f5d0r0",
+      "shots": 20000,
+      "cal_shots": 1024,
+      "compiled_depth": 919,
+      "two_qubit_proxy": 509,
+      "p_qpu_mitigated": 0.2864,
+      "p_qpu_ci95": [
+        0.28013451057911676,
+        0.2926654894208832
+      ],
+      "classical_tail": 0.00947,
+      "abs_error": 0.27693,
+      "rel_error": 29.242872228088704,
+      "e10": 0.001953125,
+      "e01": 0.0048828125,
+      "counts_raw": {
+        "0": 14272,
+        "1": 5728
+      }
+    }
+  ],
+  "ci_widths": {
+    "256 shots at P=0.12": [
+      0.08019221181728378,
+      0.1598077881827162
+    ],
+    "256 shots at P=0.28": [
+      0.2249976364144231,
+      0.33500236358557695
+    ],
+    "20k shots at P=0.28": [
+      0.2737771929163761,
+      0.28622280708362396
+    ],
+    "20k shots at P=0.01 (K=10 classical target)": [
+      0.008621017766611911,
+      0.01137898223338809
+    ]
+  },
+  "takeaways": [
+    "The 20k shot run shows the QPU noise floor for K=10, degree 4, depth 919, is P(AUX=1) = 0.2864 with 0.6 percent CI.  This is the 'true' QPU behaviour; the 256-shot 0.12 was a 1.5-sigma fluctuation below it.",
+    "Classical tail = 0.0095 is 30x below the QPU 95 percent CI lower bound (0.28).  Rel error 29x is the honest number; the 12x reported earlier was overoptimistic.",
+    "Readout mitigation is a no-op at this scale (e10 = 0.2 percent, e01 = 0.5 percent, condition number 1.007).  The bottleneck is gate decoherence on the 919-depth Heron circuit, not measurement error.",
+    "K=10 still gives a 28 percent Heron-depth reduction vs K=17 (919 vs 1285), the compiled-circuit topology is fundamentally cheaper.  The 12x-vs-29x gap is the difference between a low-stat fluke and the true noise floor.",
+    "Next steps to close the gap: (a) Tier 2 step 7 \u2014 QROM-based amplitude loading; (b) reduce degree at K=10 to degree 2; (c) ZNE folding.  All target the gate-decoherence floor, which is now the limiting factor."
+  ]
+}

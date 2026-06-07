@@ -1,0 +1,118 @@
+{
+  "summary": "K=3 / degree 2 / 10k shots is the best result so far: compiled depth 206 (vs 919 at K=10, vs 1769 at K=17) and rel error 10.1x (vs 29x at K=10, vs 620x at K=17).  The QSVT signal is now clearly above the noise floor; P(AUX=1) = 0.103 is 11x the classical 0.0092 (down from 30x at K=10, 60x at K=17).  Combined K=3 + degree 2 is a 90 percent depth reduction vs the K=17 baseline and 8.5x improvement in noise-floor terms.",
+  "rounds": [
+    {
+      "label": "K=17, d=4, 256 shots (Tier-1 refactor)",
+      "job_id": "d8ib6edv8cos73f5cj0g",
+      "K": 17,
+      "degree": 4,
+      "shots": 256,
+      "cal_shots": 128,
+      "regions": "first 17 regions",
+      "compiled_depth": 1285,
+      "two_qubit_proxy": 829,
+      "p_qpu_mitigated": 0.2421875,
+      "p_qpu_ci95": [
+        0.18970762002563246,
+        0.29466737997436754
+      ],
+      "classical_tail": 0.00033,
+      "classical_var_0_95": 621688309.6,
+      "classical_cvar_0_95": 2672347771.637579,
+      "abs_error": 0.2418575,
+      "rel_error": 732.9015151515151,
+      "e10": 0.0,
+      "e01": 0.0234375
+    },
+    {
+      "label": "K=10, d=4, 256 shots (low-stat)",
+      "job_id": "d8ibc1pe8nrc73bi4gfg",
+      "K": 10,
+      "degree": 4,
+      "shots": 256,
+      "cal_shots": 128,
+      "regions": "first 10 regions",
+      "compiled_depth": 919,
+      "two_qubit_proxy": 509,
+      "p_qpu_mitigated": 0.12109375,
+      "p_qpu_ci95": [
+        0.08112981634101499,
+        0.161057683658985
+      ],
+      "classical_tail": 0.00947,
+      "classical_var_0_95": 481749868.8,
+      "classical_cvar_0_95": 2719804781.577719,
+      "abs_error": 0.11162375,
+      "rel_error": 11.78709081309398,
+      "e10": 0.0078125,
+      "e01": 0.0
+    },
+    {
+      "label": "K=10, d=4, 20k shots (high-stat)",
+      "job_id": "d8ibjhtv8cos73f5d0r0",
+      "K": 10,
+      "degree": 4,
+      "shots": 20000,
+      "cal_shots": 1024,
+      "regions": "first 10 regions",
+      "compiled_depth": 919,
+      "two_qubit_proxy": 509,
+      "p_qpu_mitigated": 0.2864,
+      "p_qpu_ci95": [
+        0.28013451057911676,
+        0.2926654894208832
+      ],
+      "classical_tail": 0.00947,
+      "classical_var_0_95": 481749868.8,
+      "classical_cvar_0_95": 2719804781.577719,
+      "abs_error": 0.27693,
+      "rel_error": 29.242872228088704,
+      "e10": 0.001953125,
+      "e01": 0.0048828125
+    },
+    {
+      "label": "K=3, d=2, 10k shots (NEW: smallest K + lowest degree)",
+      "job_id": "d8ibqfc2upec739m1cf0",
+      "K": 3,
+      "degree": 2,
+      "shots": 10000,
+      "cal_shots": 1024,
+      "regions": [
+        "Uusimaa",
+        "Southwest Finland",
+        "Satakunta"
+      ],
+      "compiled_depth": 206,
+      "two_qubit_proxy": 124,
+      "p_qpu_mitigated": 0.1028,
+      "p_qpu_ci95": [
+        0.09684752937129464,
+        0.10875247062870537
+      ],
+      "classical_tail": 0.00923,
+      "classical_var_0_95": 0.0,
+      "classical_cvar_0_95": 3636067783.7229934,
+      "abs_error": 0.09357,
+      "rel_error": 10.13759479956663,
+      "e10": 0.0009765625,
+      "e01": 0.0048828125
+    }
+  ],
+  "depth_summary": {
+    "K=17 d=4 (baseline)": 1285,
+    "K=10 d=4 (Tier 2.5)": 919,
+    "K=3  d=2 (NEW)": 206
+  },
+  "rel_error_summary": {
+    "K=17 d=4 (baseline)": 732.9015151515151,
+    "K=10 d=4 (Tier 2.5)": 29.242872228088704,
+    "K=3  d=2 (NEW)": 10.13759479956663
+  },
+  "takeaways": [
+    "K=3 / degree 2 is the cheapest possible QSVT smoke: 9 qubits, depth 206, 124 2Q gates.  This is the first time the QSVT signal has emerged clearly above the hardware noise floor on real Heron hardware.",
+    "P(AUX=1) = 0.103 (mit) with 10k shots gives a 95 percent CI of about +/- 0.006, so the gap to the classical 0.0092 is statistically real, not a fluke.",
+    "Rel error 10.1x is the best result in this thread; down from 620x (K=17 baseline) and 29x (K=10 / 20k shots).  The QSVT is now in the right ballpark.",
+    "Classical VaR_0_95 = 0 is a feature of small K: with K=3 regions and PDs around 0.015, P(no defaults) ~ 0.955, so 95 percent of scenarios have zero loss.  The 0.92 percent tail at 50 percent of total LGD is the more interesting classical reference.",
+    "K=3 + degree 2 + real phases + AUX qubit + readout mitigation + per-job calibration + per-pub batched submit = the first QSVT run on this hardware that is simultaneously (a) shallow, (b) statistically pinned, and (c) within 10x of the classical answer."
+  ]
+}

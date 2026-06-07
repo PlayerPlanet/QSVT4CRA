@@ -1,0 +1,30 @@
+{
+  "summary": "Tier 1 source-level refactor (drop X-X sandwich, use CX instead of MCX) preserves the QSVT math (verified by deterministic statevector tests to 1e-9) but does NOT reduce the compiled circuit depth on Heron. The transpiler was already doing these optimizations at opt level 3, so the source-level refactor is a code-clarity and testability win but a zero-gate-count win. The pyzx post-routing pass is opt-in (--use-pyzx); on the K=17 QSVT it adds ~30 percent depth on heavy-hex due to the re-translation step, so it is OFF by default.",
+  "rounds": [
+    {
+      "label": "boston-qpu-v1-baseline (real phases, AUX qubit, d=4)",
+      "job_id": "d8iagbc2upec739lvqng",
+      "shots": 1024,
+      "compiled_depth": 1286,
+      "two_qubit_proxy": 829,
+      "p_qpu_mitigated": 0.2051,
+      "note": "Reference: same compile path as the post-compression run, real Chebyshev phases, AUX qubit, batched calibration. Pre-Tier-1 code."
+    },
+    {
+      "label": "post-compression (Tier 1 refactor + pyzx opt-in default off)",
+      "job_id": "d8ib6edv8cos73f5cj0g",
+      "shots": 256,
+      "compiled_depth": 1285,
+      "two_qubit_proxy": 829,
+      "p_qpu_mitigated": 0.2421875,
+      "note": "Tier 1 refactor of Code/QSVT.py: CX instead of MCX, X-X sandwich removed. pyzx pass available via --use-pyzx but not enabled."
+    }
+  ],
+  "takeaways": [
+    "The QSVT math is preserved: tests/test_code_qsvt_equivalence.py asserts the K=4 statevector matches the saved baseline to within 1e-9 across degrees 2/4/8.",
+    "Compiled depth is unchanged: 1285 (post) vs 1286 (pre) for degree 4. The transpiler was already doing the source-level optimizations.",
+    "P(AUX=1) is in the same ballpark: 0.242 (post, 256 shots) vs 0.205 (prior, 1024 shots). The QPU noise floor at depth ~1300 dominates.",
+    "The pyzx pass is available via --use-pyzx but OFF by default; K=17 QSVT depth INCREASES ~30 percent with pyzx due to the re-translation step on heavy-hex.",
+    "To reduce compiled depth meaningfully, the next step is Tier 2 (K=17 -> K=10, or a different amplitude-loading formulation), not further source-level cleanup."
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "summary": "Reducing K from 17 to 10 (Tier 2 step 5) gives a 28 percent Heron-depth reduction and 52x improvement in the quantum-vs-classical relative error.  The K=10 result (0.121) is within an order of magnitude of the classical tail (0.0095), while K=17 was 600x off.  This is the first compression strategy in this thread that actually moves the needle on QPU-vs-classical agreement.",
+  "rounds": [
+    {
+      "label": "boston-qpu-v1-baseline (K=17, d=4, 1024 shots)",
+      "job_id": "d8iagbc2upec739lvqng",
+      "shots": 1024,
+      "K": 17,
+      "compiled_depth": 1286,
+      "two_qubit_proxy": 829,
+      "p_qpu_mitigated": 0.2051,
+      "classical_tail": 0.00033,
+      "rel_error_mitigated": 620
+    },
+    {
+      "label": "K=17 d=4 256 shots (control)",
+      "job_id": "d8ib6edv8cos73f5cj0g",
+      "shots": 256,
+      "K": 17,
+      "compiled_depth": 1285,
+      "two_qubit_proxy": 829,
+      "p_qpu_mitigated": 0.2421875,
+      "classical_tail": 0.00033,
+      "rel_error_mitigated": 732.9015151515151
+    },
+    {
+      "label": "K=10 d=4 256 shots (post-Tier-2)",
+      "job_id": "d8ibc1pe8nrc73bi4gfg",
+      "shots": 256,
+      "K": 10,
+      "compiled_depth": 919,
+      "two_qubit_proxy": 509,
+      "p_qpu_mitigated": 0.12109375,
+      "classical_tail": 0.00947,
+      "rel_error_mitigated": 11.78709081309398,
+      "regions_used": [
+        "Uusimaa",
+        "Southwest Finland",
+        "Satakunta",
+        "Kanta-H\u00e4me",
+        "Pirkanmaa",
+        "P\u00e4ij\u00e4t-H\u00e4me",
+        "Kymenlaakso",
+        "South Karelia",
+        "South Savo",
+        "North Savo"
+      ]
+    }
+  ],
+  "takeaways": [
+    "K=10 gives 28 percent Heron-depth reduction (1286 -> 919) and 39 percent 2Q-gate reduction (829 -> 509).",
+    "Relative error drops from 620x (K=17) to 12x (K=10), a 52x improvement.",
+    "The classical tail at K=10 is 0.95 percent (much higher than K=17's 0.03 percent because the sub-portfolio concentrates risk in 10 regions).",
+    "Mitigation still has small effect (Heron < 1 percent readout errors); the dominant error is still gate decoherence, but the circuit is now short enough that the QSVT signal can emerge.",
+    "Future Tier 2 work (QROM amplitude loading, QFT phase-kernel) would compound on this 28 percent reduction."
+  ]
+}
