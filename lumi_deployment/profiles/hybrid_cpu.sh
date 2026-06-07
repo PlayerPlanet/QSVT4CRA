@@ -19,7 +19,7 @@
 #SBATCH --error=/scratch/project_465003017/%u/qsvt4cra-research/slurm_logs/%x-%j.err
 set -euo pipefail
 PROFILE_NAME="${PROFILE_NAME:-hybrid_cpu}"
-SCRIPT_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+SCRIPT_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "$0")/.." && pwd)}/lumi_deployment"
 # Force the CPU half of the hybrid experiment
 export EXPERIMENT="${EXPERIMENT:-mc_ground_truth}"
 export COPUla="${COPULA:-gaussian}"

@@ -15,7 +15,7 @@
 #SBATCH --error=/scratch/project_465003017/%u/qsvt4cra-research/slurm_logs/%x-%j.err
 set -euo pipefail
 PROFILE_NAME="${PROFILE_NAME:-hybrid_gpu}"
-SCRIPT_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+SCRIPT_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "$0")/.." && pwd)}/lumi_deployment"
 # Force the GPU half of the hybrid experiment
 export EXPERIMENT="${EXPERIMENT:-sbi_train}"
 export SBI_METHOD="${SBI_METHOD:-npe}"

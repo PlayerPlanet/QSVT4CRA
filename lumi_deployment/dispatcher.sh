@@ -91,8 +91,18 @@ case "$EXPERIMENT" in
       NODES="${SLURM_NNODES:-1}"
       SCENARIOS=$((1000000 * NODES))
       echo "[weak-scaling] ${NODES} nodes -> ${SCENARIOS} scenarios (expected constant time)"
+      # Use the .pt checkpoint from sbi_train (contains posterior_samples inside)
+      CHECKPOINT="checkpoints/sbi_npe_baseline_K10.pt"
+      if [[ -f "$CHECKPOINT" ]]; then
+          POSTERIOR_FLAG="--posterior-checkpoint $CHECKPOINT"
+      elif [[ -f "posterior_samples.npy" ]]; then
+          POSTERIOR_FLAG="--posterior-samples posterior_samples.npy"
+      else
+          echo "ERROR: no posterior samples found (need sbi_train to run first)" >&2
+          exit 1
+      fi
       python -m experiments.mc_ground_truth \
-          --posterior-samples posterior_samples.npy \
+          $POSTERIOR_FLAG \
           --n-scenarios "${SCENARIOS}" \
           --copula gaussian \
           --regime baseline \
@@ -109,8 +119,17 @@ case "$EXPERIMENT" in
       ;;
 
   ood_robustness)
+      CHECKPOINT="checkpoints/sbi_npe_baseline_K10.pt"
+      if [[ -f "$CHECKPOINT" ]]; then
+          POSTERIOR_FLAG="--posterior-checkpoint $CHECKPOINT"
+      elif [[ -f "posterior_samples.npy" ]]; then
+          POSTERIOR_FLAG="--posterior-samples posterior_samples.npy"
+      else
+          echo "ERROR: no posterior samples found" >&2
+          exit 1
+      fi
       python -m experiments.ood_robustness \
-          --posterior-samples posterior_samples.npy \
+          $POSTERIOR_FLAG \
           --test-regimes baseline housing_crash rate_shock_0.5 rate_shock_1.5 unemployment liquidity \
           --n-posterior-samples "${N_POSTERIOR_SAMPLES:-1000}" \
           --K "${K:-10}" \

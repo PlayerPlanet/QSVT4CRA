@@ -230,18 +230,28 @@ def main() -> None:
     # Load posterior samples if provided
     posterior_samples = None
     if args.posterior_checkpoint:
-        data = np.load(args.posterior_checkpoint)
-        if "theta_samples" in data:
-            posterior_samples = data["theta_samples"]
-        elif "posterior_samples" in data:
-            posterior_samples = data["posterior_samples"]
+        if str(args.posterior_checkpoint).endswith(".pt"):
+            import torch
+            ckpt = torch.load(args.posterior_checkpoint, map_location="cpu", weights_only=False)
+            posterior_samples = (
+                ckpt.get("posterior_samples")
+                or ckpt.get("samples")
+                or ckpt.get("theta")
+                or ckpt.get("posterior")
+            )
         else:
-            # Try to find any array with2D shape
-            for key in data.files:
-                arr = data[key]
-                if arr.ndim == 2 and arr.shape[1] > 0:
-                    posterior_samples = arr
-                    break
+            data = np.load(args.posterior_checkpoint)
+            if "theta_samples" in data:
+                posterior_samples = data["theta_samples"]
+            elif "posterior_samples" in data:
+                posterior_samples = data["posterior_samples"]
+            else:
+                # Try to find any array with2D shape
+                for key in data.files:
+                    arr = data[key]
+                    if arr.ndim == 2 and arr.shape[1] > 0:
+                        posterior_samples = arr
+                        break
 
     print(f"Running QSVT sweep with degrees: {args.degrees}")
     print(f"K={args.K}, target_loss={args.target_loss}, n_shots={args.n_shots}")
